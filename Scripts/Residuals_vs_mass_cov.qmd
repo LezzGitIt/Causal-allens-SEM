@@ -1,0 +1,455 @@
+---
+title: "Detecting shape shifting across enviornmental gradients -- Allometric residuals vs including mass as a covariate"
+format: pdf
+editor: visual
+knitr:
+  opts_chunk: 
+    root.dir: '/Users/aaronskinner/Library/CloudStorage/OneDrive-UBC/Grad_School/MS/EWPW/Bergs_Rule/Methods paper/Allometric-scaling'
+    comment: "#>"
+    collapse: true
+editor_options: 
+  chunk_output_type: console
+---
+
+{{< pagebreak >}}
+
+::: {style="font-size: 200%;"}
+**Goal:**
+:::
+
+Simulation code to better understand how allometry influences metrics of shape shifting Goal is to show cases where allometry is important to understanding the true morphological response.
+
+# Background
+
+Wildlife appear to be changing their size & shape in response to climate change. Bergmann's rule predicts that body size will decrease at warmer temperatures, while Allen's rule claims that appendage length will increase (relative to body size) in response to increasing temperatures. But measuring changes in size & shape is challenging. With the goal of identifying the impact of temperature increase on changes in **body shape** (this is important), there are two primary ways that people have attempted to estimate this:
+
+1)  Including a metric of body size as a covariate in models predicting appendage length: E.g., Wing \~ Mass + Temperature_increase
+
+2)  Using the residuals from a regression model: E.g.\
+    Mod 1: Wing \~ Mass \# Extract the residuals from this model, THEN\
+    Mod 2: Residuals \~ Temperature_increase
+
+Both of these approaches attempt to control for body size (Mass in the above models) to isolate the changes in *relative* appendage length (Wing). There are authors who have advocated for each method (Santoro & Calzada, 2022; Ryding et al, 2022), but there is no consensus on which approach most accurately estimates the impact of an increase of temperature on body shape (i.e., 'wingyness').
+
+Important equations to keep in mind:
+
+-   b_ols = cov\[x,y\] / var\[x\] OR equivalently
+
+-   b_ols = r \* Sy / Sx where S is the std. dev
+
+-   b_sma = sign(r) \* Sy / Sx , ie if r is negative then b_sma is also negative
+
+NOTE:: From the formulas above, we have:
+
+-   b_sma = (r \* (Sy / Sx)) / r \# (the rs cancel out)
+
+# Load libraries
+
+```{r}
+#| label: Libraries
+#| message: false
+library(tidyverse)
+library(janitor)
+library(ggplot2)
+library(gridExtra)
+library(ggpubr)
+library(cowplot)
+library(smatr)
+library(MASS) 
+library(ggpmisc) # Plots MA or SMA lines of best fit
+ggplot2::theme_set(theme_cowplot())
+#library(scales) 
+#library(conflicted)
+#conflicts_prefer(dplyr::select)
+#conflicts_prefer(dplyr::filter)
+```
+
+# Background: OLS vs SMA
+
+It is important to understand two different types of regression: Ordinary least squares (OLS) & Standardized major axis (SMA) regression. It's easiest to do this with an example.
+
+First, let's define a few functions.
+
+Simulation goal:: I want to simulate three variables -- var1 = Wing, var2 = mass, var3 = temperature -- with specific correlations. The correlations we set below refer to the variables in this order (e.g. r_12 is the correlation between wing & mass).
+
+```{r}
+#| label: Data-generating-function
+
+# Function to generate datasets
+gen_data <- function(b_sma_12 = NULL, r_12, r_13, r_23) {
+  Sigma <- gen_3var_cov(b_sma_12, r_12, r_13, r_23)
+  data <- mvrnorm(n = 10000, mu = rep(3, 3), Sigma = Sigma, empirical = TRUE)
+  morph_temp <- tibble(Wing = data[,1], Mass= data[,2], Temp_inc= data[,3])
+  
+  morph_temp2 <- morph_temp %>% 
+    mutate(Temp_bin = cut(Temp_inc, breaks = 15, labels = FALSE, 
+                          ordered_result = TRUE)) %>%
+    arrange(Temp_inc) %>%
+    slice_sample(n = 200, by = Temp_bin) %>%
+    filter(!Temp_bin %in% c(1:3, 12:15))
+}
+```
+
+```{r}
+#| label: Function-var-cov
+
+# Function to generate var-cov matrix to produce desired relationships - used in the gen_data() function 
+gen_3var_cov <- function(b_sma_12 = NULL, r_12 = .5, r_13 = 0, r_23 = 0) { 
+  if(!is.null(b_sma_12)) { 
+    S1 <- abs(b_sma_12) 
+  } else { 
+      S1 <- 1 
+  } 
+  S2 <- 1 
+  cov_12 <- r_12 * S1 * S2 
+  cov_13 <- r_13 * S1 * 1 
+  cov_23 <- r_23 * S2 * 1 
+  matrix(c( S1^2, cov_12, cov_13, cov_12, S2^2, cov_23, cov_13, cov_23, 1 ), nrow = 3) 
+  }
+```
+
+Let's generate some example data & run some SMA models
+
+```{r}
+#| label: Ex-df-mods
+Ex_df_wingy <- pmap(tibble(b_sma_12 = .33, r_12 = .3, r_13 = -.1, r_23 = -.4), gen_data)[[1]]
+Ex_df_wingy
+```
+
+So this tibble contains wing & mass values from a hypothetical species, as well as simulated amounts of temperature increase. It's important to realize that this is a **single simulation, from a single species** with `r nrow(Ex_df_wingy)` individuals. Down the line we will be simulating \>100 datasets (\>100 hypothetical species), each with `r nrow(Ex_df_wingy)` individuals.
+
+```{r}
+#| label: Example-SMA-mods
+mod_wm <- sma(Wing ~ Mass, data = Ex_df_wingy)
+mod_mw <- sma(Mass ~ Wing, data = Ex_df_wingy)
+summary(mod_wm)
+mod_ols <- lm(Wing ~ Mass, data = Ex_df_wingy)
+size_temp_r <- Ex_df_wingy %>% mutate(res_wm = residuals(mod_wm), 
+                                     res_mw = residuals(mod_mw),
+                                     ols_r = residuals(mod_ols), 
+                                     individual = row_number())
+```
+
+SMA regression minimizes the residuals in both X & Y directions. This makes sense for situations where we don't think that X -\> Y, but instead just want to understand the relationship between X & Y.\
+In the plot below we flip the axes, & plot both the OLS (red) & SMA (blue) regression lines of best fit, as well as an individual bird (highlighted in green).
+
+```{r}
+#| label: SMA-ex
+
+## Can flip axes
+Highlight_pt <- size_temp_r %>% 
+  filter(Mass > 0 & Mass < 1 & res_wm < -.05) %>%
+  pull(individual)
+Highlight_pt <- Highlight_pt[1]
+
+# Wing ~ mass
+w_m <- size_temp_r %>%
+  ggplot(aes(x = Mass, y = Wing)) + 
+  geom_point(alpha = .6) +
+  geom_point(data = ~filter(.x, individual == Highlight_pt), 
+             size = 5, color = "green") + 
+  geom_smooth(method = "lm", color = "red") +
+  ggpmisc::stat_ma_line(method = "SMA", color = "blue") 
+
+# Mass ~ wing 
+m_w <- size_temp_r %>%
+  ggplot(aes(x = Wing, y = Mass)) + 
+  geom_point(alpha = .6) +
+  geom_point(data = ~filter(.x, individual == Highlight_pt), 
+             size = 5, color = "green") + 
+  geom_smooth(method = "lm", color = "red") +
+  ggpmisc::stat_ma_line(method = "SMA", color = "blue") 
+
+ggarrange(w_m, m_w)
+```
+
+Another property of SMA regression is that the residuals are equal & oppositely correlated with both X (Mass) & Y (Wing). In OLS -- Residuals are not correlated with X & highly correlated with Y.
+
+```{r}
+#| label: SMA-resid-equal-opposit
+
+cor(size_temp_r$Mass, size_temp_r$res_wm)
+cor(size_temp_r$Wing, size_temp_r$res_wm)
+
+round(cor(size_temp_r$Mass, size_temp_r$ols_r), 2) # Not correlated
+cor(size_temp_r$Wing, size_temp_r$ols_r) # Highly correlated
+```
+
+# Simulation
+
+First, determine whether you'd like to constrain the SMA slope to be specific values. This is just a step to ensure that setting b_sma values is not biasing our findings -- constraining the SMA values will fix the OLS slopes given the deterministic relationship between b_sma_12, r_12, and b_ols_12
+
+```{r}
+#| label: Set-b_sma
+## Select whether you'd like to constrain the b_sma values or not. 
+b_sma <- c(.22, .33, .44) # NULL
+```
+
+# Parameter matrix
+
+```{r}
+#| label: Define-parameter-matrix
+
+# Create combinations of parameters to run through the extract_coefs() function
+Shape <- c("Wingyier", "Proportional", "Fatter")
+Shape <- setNames(Shape, Shape)
+Parms_mat <- expand_grid(
+  b_sma_12 = b_sma,
+  r_12 = c(.2, .3, .4),
+  r_13 = c(0, -.1, -.2, -.4),
+  r_23 = c(0, -.1, -.2, -.4)
+  # Effect of temperature on wingyness
+) %>% mutate(Temp_eff = case_when( 
+  r_13 > r_23 ~ Shape[1], 
+  r_13 == r_23 ~ Shape[2], 
+  r_13 < r_23 ~ Shape[3]), 
+  Strength = abs(r_13 - r_23))
+Parms_mat
+```
+
+In the parameter matrix we define the relationships we want to simulate — you can think of each row as a distinct species that responds differently to changes in temperature. For all species - birds tend to get smaller (all temperature-morphology correlations are negative), but some species get wingyier (i.e., the decrease in mass is greater than the decrease in wing), others get fatter, & some species change wing & mass proportionally (shape doesn't change).
+
+# Example
+
+Let's take an example set of parameters that will generate each effect (wingyier, fatter, or proportional). So the following tibble has 3 hypothetical species that respond distinctly to an increase in temperature.
+
+```{r}
+#| label: Example-parms
+
+# Hold b_sma & the correlation between wing & mass constant so slopes are roughly the same 
+Ex_parms <- Parms_mat %>% filter(b_sma_12 == .33 & r_12 == .3) %>%
+  slice_max(n = 1, order_by = Strength, by = Temp_eff, with_ties = FALSE) %>% 
+  dplyr::select(-Strength)
+Ex_parms
+```
+
+Next, let's visualize allometric scaling relationships with different amounts of temperature increase. This plot shows will confirm that our simulations are producing the desired effect: Higher temperatures are causing birds to be proprotionally wingyier, or proportionally fatter (depending on the values in the parameter matrix).
+
+First we will define a few important functions.
+
+```{r}
+#| label: Prep-data-plotting
+
+# Function to generate example data for plotting
+gen_ex_data <- function(Parms_mat){
+  Cols <- Parms_mat %>% dplyr::select(starts_with(c("b_", "r_")))
+  Parms_mat %>%
+    mutate(coefs = pmap(Cols, gen_data)) %>%
+    unnest(coefs)
+}
+
+# Format 'temperature increase' & 'Temp label' columns
+format_sma_parms <- function(sma_mod){
+  coef(sma_mod) %>% 
+    rownames_to_column("Temp_inc") %>% 
+    mutate(
+      Temp_inc = str_pad(Temp_inc, side = "left", width = 2, pad = "0"),
+      Temp_inc = str_replace(Temp_inc, pattern = "^([0-9])([0-9])$", replacement = "\\1.\\2"),
+      Temp_label = paste0(Temp_inc, "°C"), 
+      Temp_inc = as.numeric(Temp_inc)) %>%
+    tibble() 
+}
+
+## Run the SMA models & format output
+mod_parms <- map(Shape, \(Sim_shp){
+  Ex_df_wingy <- gen_ex_data(Ex_parms) %>% filter(Temp_eff == Sim_shp)
+  # Allow slopes to vary or force to remain constant 
+  mod_temp_bin <- sma(Wing ~ Mass + Temp_bin, data = Ex_df_wingy)
+  mod_temp_bin_int <- sma(Wing ~ Mass * Temp_bin, data = Ex_df_wingy)
+  
+  mod_parms <- format_sma_parms(mod_temp_bin) %>% 
+    mutate(Slopes_vary = "No")
+  mod_parms_int <- format_sma_parms(mod_temp_bin_int) %>% 
+    mutate(Slopes_vary = "Yes")
+  # Bind tbls together where slopes are held constant or vary
+  bind_rows(mod_parms, mod_parms_int)
+}) %>% list_rbind(names_to = "Temp_eff")
+```
+
+## Temp & body shape plot
+
+Create the temp & body shape plot. This confirms that when we simulate birds to get fatter as temperature increases, the wingyiest birds are found at low temperature increases. We find the opposite when we set the parameters to produce wingyier birds.. As temperature increases, the wingyiest birds are found at high temperature increases. See Figure 4 in the Shingleton article to understand these plots.
+
+```{r}
+#| label: Temp-body-shape-plot
+
+mod_parms %>%
+  filter(Slopes_vary == "Yes" & Temp_eff != "Proportional") %>%
+  mutate(x = 0) %>% 
+  ggplot() +
+  geom_abline(aes(intercept = elevation, slope = slope, color = Temp_inc)) +
+  ggrepel::geom_text_repel(aes(x = x, y = elevation, label = Temp_label)) +
+  labs(x = "Log mass", y = "Log wing") + 
+  theme(axis.text = element_blank(),
+        axis.ticks = element_blank()) + 
+  guides(color = "none") + 
+  facet_wrap(~Temp_eff, scales = "free_y")
+```
+
+# Simulate full dataset
+
+Ok! We've confirmed that our functions are working as expected.. Now let's return to the question of interest. Which statistical approach is better at detecting changes in shape as the climate warms?
+
+We simulate data for every combination of parameters in our parameter matrix, & then define the function that we'll use to extract our estimated parameter coefficients from the models we run on the simulated data.
+
+```{r}
+#| label: Generate-data
+
+# Simulate data 
+Cols <- Parms_mat %>% dplyr::select(starts_with(c("b_", "r_")))
+df_morph_l <- pmap(Cols, gen_data)
+
+# Function to run mods & extract coefficients
+extract_coefs <- function(Sim_df) {
+  ## Compare SMA resid vs Ryding approach 
+  sma_mod <- sma(Wing ~ Mass, data = Sim_df)
+  resid_sma <- residuals(sma_mod)
+  
+  resid_app <- lm(resid_sma ~ Temp_inc, data = Sim_df)
+  ryding_app <- lm(Wing ~ Mass + Temp_inc, data = Sim_df)
+  
+  ## Fit SMA models to ensure that temp had desired effect on allometry
+  # Keep the slope fixed
+  mod_temp_bin <- sma(Wing ~ Mass + Temp_bin, data = Sim_df)
+  # Allow the slope to vary with binned temp
+  mod_temp_bin_int <- sma(Wing ~ Mass * Temp_bin, data = Sim_df)
+  
+  # Format coefficients
+  mod_parms <- format_sma_parms(mod_temp_bin)
+  mod_parms_int <- format_sma_parms(mod_temp_bin_int)
+  
+  tibble(
+    cor_allometry = cor(mod_parms$Temp_inc, mod_parms$elevation),
+    cor_allometry_int = cor(mod_parms_int$Temp_inc, mod_parms_int$elevation),
+    coef_resid_app = coef(resid_app)["Temp_inc"],
+    coef_ryding_app = coef(ryding_app)["Temp_inc"],
+    est_b_sma = coef(sma_mod)["slope"]
+  )
+}
+
+# Apply function & combine with the parameters that generated the data
+Parms_tbl <- map(df_morph_l, extract_coefs) %>% list_rbind()
+Parms_tbl2 <- bind_cols(Parms_mat, Parms_tbl)
+Parms_tbl2
+```
+
+Next, apply the function & combine with the parameters that generated the data. We then format the tibble for plotting
+
+```{r}
+#| label: Format-parms-tbl
+Parms_tbl <- map(df_morph_l, extract_coefs) %>% list_rbind()
+Parms_tbl2 <- bind_cols(Parms_mat, Parms_tbl)
+Parms_tbl2
+
+## Format
+# Pivot_longer to allow comparison between Ryding & the residual model 
+Parms_tbl3 <- Parms_tbl2 %>% 
+  pivot_longer(cols = c(coef_resid_app, coef_ryding_app), 
+               names_to = "Model", values_to = "b_temp_inc") %>% 
+  mutate(Model = str_remove_all(Model, "coef_|_app"), 
+         Model = str_to_sentence(Model), 
+         Scaling = NA)
+if(!is.null(b_sma)){
+  Parms_tbl3 <- Parms_tbl3 %>% mutate(Scaling = case_when(
+    b_sma_12 < 0.33 ~ "Hypoallometry", 
+    b_sma_12 > 0.33 ~ "Hyperallometry",
+    near(b_sma_12, 0.33) ~ "Isometry"
+  ), 
+  Scaling = factor(Scaling, levels = c("Hypoallometry", "Isometry", "Hyperallometry")))
+}
+```
+
+## Graphical checks
+
+We've simulated data & extracted parameter coefficients from our models, but a first step is just ensuring that things look as we expect them to. So we do some graphical checks.
+
+NOTE — In all of the following plots, each point represents a hypothetical species (a row in the Parms_matrix), or a certain model from a hypothetical species.
+
+*Check 1* – there should be positive cor_allometry values when we set the simulation to produce wingyier birds at greater temperature increases, & the opposite with fatter birds.
+
+```{r}
+#| label: Cor_allometry values
+
+Parms_tbl3 %>% 
+  pivot_longer(cols = c(cor_allometry, cor_allometry_int), 
+               names_to = "SMA_mod", values_to = "Correlation") %>%
+  mutate(SMA_mod = if_else(
+    SMA_mod == "cor_allometry", "No interaction", "Interaction")
+  ) %>%
+  ggplot(aes(x = Temp_eff, y = Correlation)) + 
+  geom_boxplot(position = position_dodge(width = .75), outliers = FALSE) + 
+  geom_point(position = position_jitterdodge(jitter.width = .7), alpha = .5,
+             aes(color = SMA_mod, group = SMA_mod)) +
+  labs(y = "Correlation Temp and \nSMA intercept", 
+       title = "Effect of temperature on wingyness")
+```
+
+*Check 2* – Were SMA slopes maintained in the simulation?
+
+```{r}
+#| label: SMA-slopes-maintained
+# Ensure that the SMA scaling relationships were maintained during simulation
+if(!is.null(b_sma)){
+  Parms_tbl3 %>% ggplot(aes(x = Scaling, y = est_b_sma, color = Scaling)) + 
+    geom_boxplot() + 
+    geom_point(position = position_jitter(width = .1), color = "black", 
+               alpha = .5)
+}
+```
+
+Things look good! Now let's move onto the relationship of interest... How do the allometric residuals & 'including mass as a covariate' (statistical or methodological) approaches compare at recovering the true relationship of increasing temperature on shape?
+
+# Compare approaches
+
+In the following plot, we have the true effect that we simulated on the x-axis, & the impact of temperature increase on wingyness on the Y-axis. A positive slope means that birds get wingyer as temperature increases, and a negative slope means that birds get fatter as temperature increases. Points are colored by the strength of the response in the simulated species, where lighter shades of blue mean there is a larger difference in the effect of temperature on wing (in fatter birds) or mass (in wingyier birds).
+
+```{r}
+#| label: Compare-approaches
+#| fig-width: 11
+#| fig-height: 8
+
+## Plot relationship of interest -- 
+Facet_labs <- c("Resid" = "Allometric residuals", 
+                "Ryding" = "Mass as covariate")
+ggplot(Parms_tbl3, aes(x = Temp_eff, y = b_temp_inc)) + 
+  geom_hline(yintercept = 0, linetype = "dashed") + 
+  geom_boxplot(position = position_dodge(width = .75), outlier.shape = NA) + 
+  geom_point(position = position_jitterdodge(jitter.width = .9), 
+             alpha = .6, size = 3,
+             aes(color = Strength, shape = Scaling, group = Temp_eff)) + 
+  labs(x = "True effect", y = "β temperature") + 
+  ylim(c(-.2, .2)) + 
+  facet_wrap(vars(Model), labeller = as_labeller(Facet_labs))
+
+# Save
+#ggsave("Figures/Mod_comparison.png", bg = "white")
+
+```
+
+# Interpretation
+
+Wow! We see that the allometric residuals approach does a better job at identifying the correct relationship with changes in temperature. The 'mass as a covariate' approach is negatively biased
+
+1.  it misidentifies birds that are decreasing proportionally as getting fatter with increasing temperatures.
+
+2.  Furthermore, it only detects the appropriate change in birds that are getting wingyier about half the time.
+
+There are at least two things that I believe are going on here...
+
+The 'mass as a covariate' approach claims that by including a metric of body size as a predictor, we are now measuring the impact of temperature on the proportional change in size of the response variable (i.e., wing length in this case). But in reality we are still measuring the impact of mass & temperature on absolute (not relative) wing size. Birds with smaller masses tend to have smaller wings (this does *partially* control for changes in overall body size), and birds in areas getting hotter also have smaller wings. But if an increase in temperature decreases mass only slightly more than wing (low "Strengths' in the above plot), temperature's decrease in **overall wing size** may mislead us to think that birds get proportionally fatter with increasing temperatures. These are the species simulated as 'wingyier' but are below the dashed zero line in the 'mass as a covariate' facet from the previous plot.
+
+The other thing that may be occurring is that OLS regression is fundamentally not the appropriate type of regression for allometric relationships.
+
+In the following plot of our hypothetical species (i.e., each point is an individual bird) that we simulated to get wingyier as temperature increases, the SMA line of best fit is blue, the OLS regression line is red. The OLS regression always underestimates the slope of the true relationship between mass & wing.
+
+```{r}
+#| label: Allometric-relationship-temp
+
+ggplot(data = Ex_df_wingy, aes(x = Mass, y = Wing)) + 
+  geom_smooth(method = "lm", color = "red") +
+  ggpmisc::stat_ma_line(method = "SMA", color = "blue") +
+  geom_point(alpha = .7, aes(color = Temp_inc)) +
+  labs(x = "Log (mass)", y = "Log (wing)")
+```
+
+The above plot should also be useful in developing some intuition for why allometric scaling does a good job detecting the true relationship between an increase in temperature & the proportional wing change. The points are colored by how much temperature increases – you can see that the lighter colored blue points are largely in the bottom left quadrant of the plot, as higher temperatures tend to make individuals smaller. The key here though is that most of the lighter blue points are also above the SMA line of best fit, & thus have positive residuals. This is exactly what we would expect for species that get wingyier as temperature increases!
