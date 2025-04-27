@@ -7,6 +7,9 @@ execute:
  warning: false
 format: pdf
 editor: visual
+bibliography: ../Supp_files/EWPW.bib
+link-citations: true
+csl: ../Supp_files/methods-in-ecology-and-evolution.csl
 knitr:
   opts_chunk: 
     root.dir: '/Users/aaronskinner/Library/CloudStorage/OneDrive-UBC/Grad_School/MS/EWPW/Bergs_Rule/Methods paper/Allometric-scaling'
@@ -28,16 +31,21 @@ We find qualitatively similar results in a case study examining 'wingyness' acro
 
 # Background
 
-Wildlife appear to be changing their size & shape in response to climate change. Bergmann's rule predicts that body size will decrease at warmer temperatures, while Allen's rule claims that appendage length will increase (relative to body size) in response to increasing temperatures. But measuring changes in size & shape is challenging. With the goal of identifying the impact of temperature increase on changes in ***body shape***, there are two primary approaches that people have employed to estimate this:
+Wildlife appear to be changing their size & shape in response to climate change. Bergmann's rule predicts that body size will decrease at warmer temperatures, while Allen's rule claims that appendage length will increase (relative to body size) in response to increasing temperatures. But measuring changes in size & shape is challenging. With the goal of understanding the impact of temperature increase on changes in ***body shape*** (i.e., relative appendage length), there are three primary approaches that people have employed to estimate this:
 
-1)  'Mass as a covariate' approach: Include a metric of body size as a covariate in models predicting appendage length: E.g.,\
+1)  Ratio approach: Use the ratio of appendage length to mass as the response variable, e.g., \
+    Wing:mass \~ Temperature_increase
+
+2)  'Mass as a covariate' approach: Include a metric of body size as a covariate in models predicting appendage length: E.g.,\
     OLS(Wing \~ Mass + Temperature_increase)
 
-2)  'Allometric residuals' approach: Using the residuals from a regression model: E.g.\
+3)  'Allometric residuals' approach: Using the residuals from a regression model: E.g.\
     Mod 1: SMA(Wing \~ Mass) \# Extract the residuals from this model, THEN\
     Mod 2: OLS(Residuals \~ Temperature_increase)
 
-Both of these approaches attempt to control for body size (Mass in the above models) to isolate the changes in *relative* appendage length (Wing). There are authors who have advocated for each method (Santoro & Calzada, 2022; Ryding et al, 2022), but there is no consensus on which approach most accurately estimates the impact of an increase of temperature on body shape (i.e., 'wingyness').
+All three of these approaches attempt to control for body size (the variable 'Mass' in the above models) to isolate the changes in *relative* appendage length (variable 'Wing'), but all three approaches likely contain biases. The ratio approach has been used for several decades, but has been shown to be biased as it is often highly correlated with body size [@greenMassLengthResiduals2001; @jakobEstimatingFitnessComparison1996]. Despite these known biases, ratios are still used to examine changes in animal shape [e.g., @jirinecMorphologicalConsequencesClimate2021; @dubinerWidespreadRecentChanges2022], thus, we include the ratio approach in the present study to facilitate comparison, but we do not discuss it further.
+
+Past simulation studies have shown that that multivariate regression (i.e., the 'Mass as a covariate' approach) does a better job of estimating the slope of the variable of interest (in this case, temperature increase), especially when predictor variables are correlated [@freckletonMisuseResidualsEcology2002]. However, other studies show that OLS regression is not the appropriate type of regression for studies of allometric scaling, and that using the residuals from model II regression is more closely related to biological metrics of interest [e.g., body condition, @greenMassLengthResiduals2001; @peigNewPerspectivesEstimating2009; @peigParadigmBodyCondition2010]. In the context of detecting relative changes in appendage length, there are authors who have advocated for the the 'Mass as a covariate' approach [@rydingResponseAllometryEvaluate2022], while others have stressed the importance of using allometric scaling theory [@santoroAllometryEvaluateAllens2022]. To date, there is no consensus on which approach most accurately estimates the impact of an increase of temperature on body shape (i.e., relative appendage length).
 
 # Load libraries
 
@@ -66,7 +74,7 @@ ggplot2::theme_set(theme_cowplot())
 
 It is important to understand two different types of regression: Ordinary least squares (OLS) & Standardized major axis (SMA) regression. The key difference in these types of regression is how they minimize residuals to generate a line of best fit.
 
-OLS regression minimizes the residuals on the Y axis, whereas SMA regression minimizes the residuals in both X & Y directions. This makes sense for situations where we don't think that X -\> Y, but instead just want to understand the relationship between X & Y. If this is sounding similar to a principal components (PC) analysis with just 2 variables, you're not wrong – the SMA regression line and the PC1 axis are identical in orientation (slope), but the SMA regression line passes through the means of X and Y, whereas PC1 goes through the origin of the centered data (mean = 0). So with only 2 dimensions (e.g., length & mass), they’re just different interpretations of the same line. You can ignore the MA regression for now.\
+OLS regression minimizes the residuals on the Y axis, whereas SMA regression minimizes the residuals in both X & Y directions. This makes sense for situations where we don't think that X -\> Y, but instead just want to understand the relationship between X & Y. If this is sounding similar to a principal components (PC) analysis with just 2 variables, you're not wrong – the SMA regression line and the PC1 axis are identical in orientation (slope), but the SMA regression line passes through the means of X and Y, whereas PC1 goes through the origin of the centered data (mean = 0). So with only 2 dimensions (e.g., length & mass), they’re just different interpretations of the same line. You can ignore the MA regression for now. See [@wartonBivariateLinefittingMethods2006] for a complete summary of SMA regression.\
 \
 ![Figure from Warton 2006](images/Captura%20de%20pantalla%202025-04-26%20a%20la(s)%2012.08.17.png)\
 \
@@ -160,6 +168,8 @@ So this tibble contains wing & mass values from a hypothetical species, as well 
 
 sma_or_ma <- "SMA"
 ```
+
+Use the smatr package to fit an SMA regression model [@wartonSmatr3Package2012].
 
 ```{r}
 #| label: Example-SMA-mods
@@ -415,6 +425,7 @@ We simulate data for every combination of parameters in our parameter matrix, & 
 
 ```{r}
 #| label: Generate-data
+#| cache: true
 
 # Simulate data 
 Cols <- Parms_mat2 %>% 
@@ -501,7 +512,7 @@ NOTE — In all of the following plots, each point represents a hypothetical spe
 
 ```{r}
 #| label: fig-cor-allometry-values
-#| fig-cap: Depsite generating datasets where birds should become fatter or wingyier with increasing temperature, when the strength of the difference in the simulated relationships is relatively weak the opposite relationship is observed in rare cases.
+#| fig-cap: Despite generating datasets where birds should become fatter or wingyier with increasing temperature, when the strength of the difference in the simulated relationships is relatively weak the opposite relationship is observed in rare cases.
 
 Parms_tbl3 %>% filter(Scaling != "Negative") %>%
   pivot_longer(cols = c(cor_allometry, cor_allometry_int), 
@@ -767,3 +778,7 @@ Box-cox to understand the parameter of the Box-Cox power transformation?
 ```{r}
 #boxcox(lm(Wing ~ Mass, data = Ex_df_wingy))
 ```
+
+{{< pagebreak >}}
+
+# References
