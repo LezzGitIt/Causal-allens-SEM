@@ -1,0 +1,67 @@
+---
+title: "The Shape of Things to Come: A Perspective on Organismal Form Across Gradients"
+number-sections: true
+# If you do not want code to show... echo: false
+execute: 
+ echo: true
+ message: false
+ warning: false 
+format: pdf
+editor: visual
+bibliography: ../Supp_files/EWPW.bib
+link-citations: true
+csl: ../Supp_files/methods-in-ecology-and-evolution.csl
+knitr:
+  opts_chunk: 
+    comment: "#>"
+    collapse: true
+editor_options: 
+  chunk_output_type: console
+---
+
+{{< pagebreak >}}
+
+# Target journal & manuscript category
+
+Target journal: Global Ecology and biogeography
+
+Manuscript category: Perspective. \
+These are short ideas or opinion centered pieces. They may provide a perspective or opinion on an issue in the field, a new idea, critique of existing ideas, a conceptual synthesis or a crystallization of an emerging idea in the field. They are not short-form research, preliminary research, nor reviews. A perspective should be 2500-5000 words with a strong emphasis on short, tight communication of ideas. Use of conceptual figures, bullet pointed or numbered lists, boxes and other techniques to keep a strong narrative flow with tight language are encouraged. Please provide a structured abstract not longer than 250 words with 3-5 headings chosen to match the structure of the paper.
+
+# Abstract
+
+**Background:** Understanding how organismal body size and shape change relative to its environment is important for ecological, evolutionary, and conservation reasons. However, the measurement of body size, and particularly body shape, is challenging. Body size cannot be accurately represented by any single morphological trait, and representations of body shape necessarily require the integration of multiple traits in a sensible way. Methods used by scientists vary tremendously, and there has been little consensus on best practices in examining morphological response of wildlife across environmental gradients. \
+\
+**Aims:** I review common methodological approaches for estimating body size and shape in wildlife, highlighting their advantages and disadvantages. Using simulated data, I demonstrate the importance of examining trait covariance and allometric relationships, and show how ecologically and evolutionary meaningful patterns can be missed when traits are analyzed in isolation.\
+\
+**Recommendations:** For wildlife studies investigating body size (e.g., Bergmann’s rule), I recommend using multiple morphological metrics to capture variation across environmental gradients. For studies of body shape (e.g., Allen’s rule), I recommend: (1) tying multiple metrics together at the level of the individual, (2) using statistical models suited for allometric scaling — such as those that accommodate measurement error in both variables — and ideally, (3) collecting repeat measurements to explicitly model error structure. More broadly, I argue that biogeographic rules should not be studied in isolation, as traits are developmentally and functionally integrated within whole-organism phenotypes.\
+\
+**Conclusions:** Studying size and shape in tandem — and applying appropriate statistical tools — will improve our understanding of how wildlife respond to environmental gradients. This is especially critical in the context of rapid climate change, where detecting and interpreting morphological responses can inform predictions of species vulnerability and resilience.
+
+# Background
+
+An organism’s morphology is perhaps the most fundamental determinant of how it interacts with its environment, and thus there are strong selective pressures to ensure that an organism's morphology is well-suited for its environment. Thus, scientists have long sought to understand how morphology is shaped by the environment, and some of the oldest macroecological 'rules' attempt to make sense of patterns in body size and shape. For example, Bergmann’s rule posits that individuals or populations of endothermic species tend to be larger in colder climates, presumably to minimize heat loss via a reduced surface-area-to-volume ratio. The complementary Allen’s rule states that appendages (e.g., limbs, tails, bills) tend to be shorter in colder regions, again reducing heat loss via a decreased surface-area-to-volume ratio.
+
+There is general support for both Bergmann’s and Allen's rules in endotherms—across both space and time, and among diverse taxa, regions, and life-history strategies such as migration and hibernation. Because the underlying processes shaping these spatial and temporal patterns are likely similar, we do not differentiate further between them in this paper. Our recommendations apply equally to both contexts.
+
+# Bergmann's rule: Body size across environmental gradients
+
+Bergmann himself used body size as a proxy for an organism’s surface-area-to-volume ratio — likely due to the impracticality of directly measuring surface area and volume in live animals. But what, exactly, is body size in ecological research?
+
+There are both linear proxies (e.g., tarsus, wing, hindfoot) and volumetric proxies (e.g., body mass), and the strength of their correlation with true body size varies tremendously among taxa. A wide range of studies have proposed different morphological metrics as the most accurate representation of body size. In birds, for example, some suggest wing length (Wiklund, 1996; Gosler et al., 1998; Piersma & Davidson, 1991), others argue for body mass (Blackburn et al., 1999; Freeman & Jackson, 1990; Rising & Somers, 1989), while still others highlight keel, tarsus (Freeman & Jackson, 1990; Senar & Pascual, 1997), or body (Wiklund, 1996) length. Some researchers have advocated for the use of the first axis of a principal component analysis (PCA) of several linear traits as a proxy for body size (Senar & Pascual, 1997), yet others have found that PCA provides little to no improvement over univariate metrics (Gosler et al., 1998).
+
+Given this lack of consensus—and the tenuous relationship between any of these proxies and an organism’s true surface-area-to-volume ratio—we argue that the best approach is to use multiple morphological metrics as complementary, though non-independent, representations of body size. This approach allows researchers to perform multiple (dependent) tests of morphological response across environmental gradients. In practice, this would likely involve a set of regression models, each with a different morphological trait as the response variable. Although this may result in conflicting signals across traits, we contend that this interpretative complexity more accurately reflects the true nature of environment–morphology relationships. Moreover, it presents an opportunity for hypothesis generation—for example, asking why trait A might be more sensitive to temperature than trait B in a given species or region.
+
+## Allometry
+
+In the interpretation of multiple metrics, we also recommend examining allometric scaling.
+
+# Allen's rule: Body shape across environmental gradients
+
+Allen's rule is often interpreted as appendage length *relative* to body size, which acknowledges that overall body size and appendage length will generally show positive covariance due to principles of biological scaling. In fact, interpreting Allen's rule as relative appendage length is the only way that Bergmann's and Allen's rules can be true simultaneously for a species exhibiting positive allometry (i.e., body size and appendage size positively covary). For the rest of this section, I will refer to body size as mass (although as noted above there are many metrics that can approximate body size), as this is the metric commonly used to represent body size in studies of Allen's rule. Positive allometry is very common in nature, as larger organisms tend to weigh more and require longer appendages to transport this increased weight. For example, lift in bird wings is FILL IN and thus the laws of physics tend to result in species with positive allometry.
+
+To examine *relative* appendage length, authors must compare a given appendage relative to a metric of body size. This has been done in several ways, including
+
+# Conclusions
+
+We are in the Anthropocene — a period of rapid global change dominated by habitat loss and climate change. While many species have not kept pace with these changes and have gone extinct, other species have been able to alter their shapes, sizes, ranges, and behaviors to adjust to this new human-dominated world. Understanding the sub-lethal, plastic or evolutionary responses is critical to understanding humanities’ full impact on biodiversity. With this knowledge, we will be better able to forecast changes to the natural world, as well as their impacts on ecosystem service provisioning.
