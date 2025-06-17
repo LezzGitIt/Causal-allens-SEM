@@ -3,7 +3,7 @@ title: "The Shape of Things to Come: A Perspective on Organismal Form Across Gra
 number-sections: true
 # If you do not want code to show... echo: false
 execute: 
- echo: true
+ echo: false
  message: false
  warning: false 
 format: pdf
@@ -23,14 +23,50 @@ editor_options:
 
 # Target journal & manuscript category
 
-Target journal: Global Ecology and biogeography
+Target journal: Global Ecology and biogeography\
+Manuscript category: Perspective\
+Description: These are short ideas or opinion centered pieces. They may provide a perspective or opinion on an issue in the field, a new idea, critique of existing ideas, a conceptual synthesis or a crystallization of an emerging idea in the field. They are not short-form research, preliminary research, nor reviews. A perspective should be **2500-5000 words** with a strong emphasis on short, tight communication of ideas. Use of **conceptual figures, bullet pointed or numbered lists, boxes** and other techniques to keep a strong narrative flow with tight language are encouraged. Please provide a structured abstract not longer than 250 words with 3-5 headings chosen to match the structure of the paper.\
+\
+Target journal: Methods in ecology & Evolution\
+Manuscript category: Perspective\
+Description:\
+Perspectives are intended to stimulate scientific debate, Perspectives are short commentaries (up to **5000 words** and structured as per [**Manuscript Specifications**](https://besjournals.onlinelibrary.wiley.com/hub/journal/2041210X/author-guidelines#MS_spec), below) that offer **conceptual advances or opinions or identity gaps in knowledge**. The salient difference between a *Review* and a *Perspective* is that the former will have much more literature to draw on than the latter. The organization of the main text can be more flexible than that of a normal *Research article*. See examples [**here**](https://besjournals.onlinelibrary.wiley.com/hub/journal/2041210x/features/perspectives?=).\
+\
+Target journal: Trends in Ecology and Evolution\
+Manuscript category: Opinion / review\
+Description: Key differences between opinion and review are –
 
-Manuscript category: Perspective. \
-These are short ideas or opinion centered pieces. They may provide a perspective or opinion on an issue in the field, a new idea, critique of existing ideas, a conceptual synthesis or a crystallization of an emerging idea in the field. They are not short-form research, preliminary research, nor reviews. A perspective should be 2500-5000 words with a strong emphasis on short, tight communication of ideas. Use of conceptual figures, bullet pointed or numbered lists, boxes and other techniques to keep a strong narrative flow with tight language are encouraged. Please provide a structured abstract not longer than 250 words with 3-5 headings chosen to match the structure of the paper.
+-   Length: 2000 v 3500 words in main text
+
+-   Opinion more forward looking, can include small review (\<30 papers) if it helps to make a point.
+
+-   Review broad and more neutral
+
+Additional journals to consider:
+
+-   Functional Ecology (Perspective or Forum)
+
+-   Ecology Letters (Perspective)
+
+-   Evolution (Perspective or Commentary)
+
+-   Biological Reviews (Mini Review)
+
+-   Trends in Ecology & Evolution (Opinion or Spotlight)
+
+-   Nature Ecology & Evolution (Comment or Perspective)
+
+-   Ecography (Forum or Review and Synthesis)
+
+-   Oikos (Forum)
+
+# Keywords
+
+Allen's rule, allometry, error-in-variables model, measurement error, relative appendage length, standardized major axis regression
 
 # Abstract
 
-**Background:** Understanding how organismal body size and shape change relative to its environment is important for ecological, evolutionary, and conservation reasons. However, the measurement of body size, and particularly body shape, is challenging. Body size cannot be accurately represented by any single morphological trait, and representations of body shape necessarily require the integration of multiple traits in a sensible way. Methods used by scientists vary tremendously, and there has been little consensus on best practices in examining morphological response of wildlife across environmental gradients. \
+**Background:** Understanding how organismal body size and shape change relative to its environment is important for ecological, evolutionary, and conservation reasons. However, the measurement of body size, and particularly body shape, is challenging. Body size cannot be accurately represented by any single morphological trait, and representations of body shape necessarily require the integration of multiple traits in a sensible way. Methods used by scientists vary tremendously, and there has been little consensus on best practices in examining morphological response of wildlife across environmental gradients.\
 \
 **Aims:** I review common methodological approaches for estimating body size and shape in wildlife, highlighting their advantages and disadvantages. Using simulated data, I demonstrate the importance of examining trait covariance and allometric relationships, and show how ecologically and evolutionary meaningful patterns can be missed when traits are analyzed in isolation.\
 \
@@ -38,30 +74,205 @@ These are short ideas or opinion centered pieces. They may provide a perspective
 \
 **Conclusions:** Studying size and shape in tandem — and applying appropriate statistical tools — will improve our understanding of how wildlife respond to environmental gradients. This is especially critical in the context of rapid climate change, where detecting and interpreting morphological responses can inform predictions of species vulnerability and resilience.
 
-# Background
+# Introduction {#sec-Conceptual-background}
 
-An organism’s morphology is perhaps the most fundamental determinant of how it interacts with its environment, and thus there are strong selective pressures to ensure that an organism's morphology is well-suited for its environment. Thus, scientists have long sought to understand how morphology is shaped by the environment, and some of the oldest macroecological 'rules' attempt to make sense of patterns in body size and shape. For example, Bergmann’s rule posits that individuals or populations of endothermic species tend to be larger in colder climates, presumably to minimize heat loss via a reduced surface-area-to-volume ratio. The complementary Allen’s rule states that appendages (e.g., limbs, tails, bills) tend to be shorter in colder regions, again reducing heat loss via a decreased surface-area-to-volume ratio.
+Wildlife appear to be changing their size & shape in response to climate change. Bergmann's and Allen's rule predict that body size will decrease while appendage length will increase with warmer temperatures, respectively. These morphological changes are beneficial for thermoregulation, as both increase the surface-area to volume ratio allowing for more efficient heat exchange in warmer environments. There is general support for both Bergmann’s and Allen's rules in endotherms—across both space and time, and among diverse taxa, regions, and life-history strategies (e.g., migration and hibernation), and in intra- and inter- specific applications [@frohlichAllometryRevealsTradeoffs2023, @baldwinComplementarityAllensBergmanns2023, @mcqueenThermalAdaptationBest2022]. Because the underlying processes shaping these spatial and temporal patterns are likely similar, we do not differentiate further between them in this paper. Our recommendations apply equally to both contexts.
 
-There is general support for both Bergmann’s and Allen's rules in endotherms—across both space and time, and among diverse taxa, regions, and life-history strategies such as migration and hibernation. Because the underlying processes shaping these spatial and temporal patterns are likely similar, we do not differentiate further between them in this paper. Our recommendations apply equally to both contexts.
+While some authors have used raw appendage size to test Allen's rule [e.g., @fanBergmannsRuleAllens2019], I would argue that interpreting appendage length without body size information is a better test of Bergmann's rule [although organs whose primary role is thermoregulation may be an exception for some species and contexts - bird bills: @tattersallEvolutionAvianBill2017; @symondsGeographicalVariationBill2010; @baldwinComplementarityAllensBergmanns2023; elephant ears: CITE]. Instead, when Allen's rule is interpreted as appendage length *relative* to body size, we acknowledges that overall body size and appendage length will generally show positive covariance due to principles of biological scaling [@shingletonAllometryStudyBiological2010]. In fact, interpreting Allen's rule as relative appendage length is the only way that Bergmann's and Allen's rules can be true simultaneously for a species exhibiting positive allometry (i.e., body size and appendage length positively covary; @nte-allometry). Positive allometry is very common in nature, as larger organisms tend to weigh more and require longer appendages to transport this increased weight. For example, lift in bird wings is FILL IN and thus the laws of physics tend to result in species with positive allometry [@raynerFormFunctionAvian1988, but also see @weeksSharedMorphologicalConsequences2020].
 
-# Bergmann's rule: Body size across environmental gradients
+## 3 common approaches
 
-Bergmann himself used body size as a proxy for an organism’s surface-area-to-volume ratio — likely due to the impracticality of directly measuring surface area and volume in live animals. But what, exactly, is body size in ecological research?
+After conducting a literature review of studies since 2021 [when @rydingShapeshiftingChangingAnimal2021 published their influential review] examining the statistical and methodological approaches employed to test for Allen's rule, I identify three primary approaches that authors have employed to understand how *relative* appendage length varies with respect to geography or climate. Thus, in addition to modeling absolute appendage length as a function of temperature change, authors have used:
 
-There are both linear proxies (e.g., tarsus, wing, hindfoot) and volumetric proxies (e.g., body mass), and the strength of their correlation with true body size varies tremendously among taxa. A wide range of studies have proposed different morphological metrics as the most accurate representation of body size. In birds, for example, some suggest wing length (Wiklund, 1996; Gosler et al., 1998; Piersma & Davidson, 1991), others argue for body mass (Blackburn et al., 1999; Freeman & Jackson, 1990; Rising & Somers, 1989), while still others highlight keel, tarsus (Freeman & Jackson, 1990; Senar & Pascual, 1997), or body (Wiklund, 1996) length. Some researchers have advocated for the use of the first axis of a principal component analysis (PCA) of several linear traits as a proxy for body size (Senar & Pascual, 1997), yet others have found that PCA provides little to no improvement over univariate metrics (Gosler et al., 1998).
+1)  Ratio approach: Use the ratio of appendage length to body size as the response variable $$
+    \frac{Appendage}{\mathit{Body\ size}} \sim \mathit{Temperature\ increase}
+    $$ {#eq-ratios}
 
-Given this lack of consensus—and the tenuous relationship between any of these proxies and an organism’s true surface-area-to-volume ratio—we argue that the best approach is to use multiple morphological metrics as complementary, though non-independent, representations of body size. This approach allows researchers to perform multiple (dependent) tests of morphological response across environmental gradients. In practice, this would likely involve a set of regression models, each with a different morphological trait as the response variable. Although this may result in conflicting signals across traits, we contend that this interpretative complexity more accurately reflects the true nature of environment–morphology relationships. Moreover, it presents an opportunity for hypothesis generation—for example, asking why trait A might be more sensitive to temperature than trait B in a given species or region.
+2)  'Two-step residual regression' approach: Using the residuals from an initial regression model as the response variable in a second model
 
-## Allometry
+$$
+\begin{aligned}
+\text{Model 1: } & \text{Appendage} \sim \mathit{Body\ size} \\
+\text{Model 2: } & \text{Residuals}_{\text{mod1}} \sim \mathit{Temperature\ increase}
+\end{aligned}
+$$ {#eq-two-step}
 
-In the interpretation of multiple metrics, we also recommend examining allometric scaling.
+3)  'Body size as a covariate' approach: Include a metric of body size as a covariate in models predicting appendage length\
+    $$
+    Appendage \sim \mathit{Body\ size} + \mathit{Temperature\ increase}
+    $$ {#eq-size-as-cov}
 
-# Allen's rule: Body shape across environmental gradients
+Approaches 2 and 3 are conceptually similar and share a key assumption – that the independent variable $\text{Body size}$ is measured without error while the response variable $\text{Appendage}$ contains all the measurement error. Hereafter, I will refer to any methodological approach assuming that all measurement error lies in the response variable as 'Classical regression' approaches.
 
-Allen's rule is often interpreted as appendage length *relative* to body size, which acknowledges that overall body size and appendage length will generally show positive covariance due to principles of biological scaling. In fact, interpreting Allen's rule as relative appendage length is the only way that Bergmann's and Allen's rules can be true simultaneously for a species exhibiting positive allometry (i.e., body size and appendage size positively covary). For the rest of this section, I will refer to body size as mass (although as noted above there are many metrics that can approximate body size), as this is the metric commonly used to represent body size in studies of Allen's rule. Positive allometry is very common in nature, as larger organisms tend to weigh more and require longer appendages to transport this increased weight. For example, lift in bird wings is FILL IN and thus the laws of physics tend to result in species with positive allometry.
+Note that all three approaches link appendage length and body size together at the *level of the individual* in an attempt to control for body size, in theory measuring the changes in *relative* appendage length. Theoretically, this makes sense as species evolve entire body plans in concert, and thus body features do not change independently of one another. And compared with running separate models of appendage length and body size (e.g., as is frequently done in studies of Bergmann's rule), measuring relative appendage length at the level of the individual should provide more sensitive metrics. For example, if species exhibit small decreases in mass and simultaneous small increases in appendage length, these changes may be deemed unimportant if analyzed in isolation (e.g., Skinner et al. 2025). However, these small changes may represent a meaningful change in body shape that could be detected when length and mass are analyzed in concert [e.g., @jirinecMorphologicalConsequencesClimate2021, @dubinerWidespreadRecentChanges2022]. Thus, individual-level metrics of body shape provide us the most statistical power to detect environment-morphology relationships.
 
-To examine *relative* appendage length, authors must compare a given appendage relative to a metric of body size. This has been done in several ways, including
+::: {#nte-allometry .callout-note icon="false"}
+## Allometric scaling in studies assessing relative appendage length
+
+Allometry is the study of how biological processes change with body size. For our purposes this refers to how morphology changes as an animal increases in body size, or how an appendage $Y$ scales with body size $X$.
+
+$$
+Y = \alpha * X^\beta
+$$
+
+On the log scale this function becomes additive
+
+$$
+log(Y) = log(\alpha) + \beta * log(X)\
+$$
+
+where $log(\alpha)$ determines the average relative appendage length for a given body size (the allometric intercept), and $\beta$ determines the rate that the appendage increases with an increase in body size [the allometric slope; @shingletonAllometryStudyBiological2010].
+
+Allometric scaling theory posits that two linear features should increase linearly ($\beta$ = 1), whereas a linear feature and volume should scale inverse cubically ($\beta = 1/3$; i.e. given that organismal volume is three-dimensional; [@raynerFormFunctionAvian1988]). When empirical reality matches theoretical expectations, this is known as isometric scaling [@shingletonAllometryStudyBiological2010]. If the allometric slope exceeds that expected by theory (e.g. $\beta > 1/3$), this is known as hyperallometry (or positive allometry), and when it is is less than expected by theory (e.g. $\beta < 1/3$), this is known as hypoallometry.
+
+There has been confusion in the literature as to what constitutes 'addressing' allometric scaling in studies of body shape. In the context of examining relative appendage length, Santoro & Calzada @santoroAllometryEvaluateAllens2022 argued that we must base our methods in allometric scaling theory, and that only certain types of regression (e.g., SMA regression) appropriately 'address' allometric scaling. In a rebuttal by Ryding et al. @rydingResponseAllometryEvaluate2022, they argue that the 'standard practice approach' of including body size as a covariate in multiple regression is 'effectively equivalent' to more 'detailed allometric investigations.' I agree with both sets of authors in that 1) any approach examining appendage length relative to body size does (at least somewhat) address allometric scaling [as argued by @rydingResponseAllometryEvaluate2022], but 2) methods that account for measurement error in $X$ are more robust (in most situations) than methods that ignore this measurement error [@santoroAllometryEvaluateAllens2022].
+:::
+
+# Literature review
+
+```{r}
+#| label: Setup
+
+# Load libraries
+library(tidyverse)
+library(janitor)
+library(readxl)
+library(smatr)
+library(ggpubr)
+library(cowplot)
+ggplot2::theme_set(theme_cowplot())
+
+# Source functions
+source("Scripts/Key_allometry_fns.R")
+```
+
+```{r}
+#| label: fig-lit-review
+#| fig-cap: The prevalence of 3 primary techniques used in the literature to test Allen's rule. 
+
+Lit_review <- read_excel("Lit_review/MLC_Methods_allens_rule.xlsx", sheet = "Updated Excel") %>% clean_names()
+
+Lr <- Lit_review %>% 
+  dplyr::select(authors, year, regression_used, starts_with("approach")) %>% 
+  mutate(study = row_number()) %>%
+  pivot_longer(cols = starts_with("approach"), names_to = "approach") %>% 
+  mutate(approach = str_remove(approach, "approach_")) %>%
+  filter(!is.na(value))
+
+Lr %>% 
+  summarize(num_studies = sum(value == "P"), .by = approach) %>%
+  mutate(approach = str_to_sentence(approach),
+         approach = str_replace_all(approach, "_", "\n"),
+         approach = as.factor(approach)) %>% 
+  ggplot(aes(x = fct_reorder(approach, desc(num_studies)))) + 
+  geom_bar(stat = "identity", aes(y = num_studies)) +
+  labs(x = NULL, y = "Frequency")
+
+```
+
+## Ratios
+
+The simplest approach to obtain a measure of relative appendage length is to take the ratio of body size : appendage length or vice versa. We found that most studies used mass (volumetric) to represent body size and a linear metric of appendage length, as there are some conceptual benefits to this approach. For example, Jirinec et al @jirinecMorphologicalConsequencesClimate2021 note that mass:wing ratios are proportional to wing loading (mass:wing area) as long as there is no change in wing shape with body size. Other authors have squared a linear metric (e.g., $\text{wing length}^2 \text{or body length}^2$) and divided by mass to represent the surface-area to volume ratio [@dubinerWidespreadRecentChanges2022, @nwaoguTemperatureAridityDetermine2018]. This is appealing as both Bergmann’s and Allen's rule were theorized with respect to changes in surface-area to volume ratios inherent in biological scaling, however it is unclear how well these measurements reflect an animal’s true surface-area to volume ratio. Furthermore, these ratios can be challenging to interpret, as the 1) separation of Bergmann’s vs. Allen's rule is muddled, and 2) ratios have also been frequently interpreted as indicators of body condition [i.e., how much mass or fat stores does an organism have for a given structural size; see @peigParadigmBodyCondition2010 for a summary]. Most important from a practical perspective, ratio approaches are often highly correlated with body size [@greenMassLengthResiduals2001; @jakobEstimatingFitnessComparison1996] and thus provide little information on animal *shape*. Thus, for practical and interprative reasons we counsel against the use of ratios as indicators of body shape.
+
+## Classical regression approaches
+
+The 'Two-step residual regression' and 'Body size as a covariate' approaches are closely related. In fact, when predictor variables — namely 'body size' and 'temperature increase' in @eq-two-step and @eq-size-as-cov above — are uncorrelated, these two approaches will yield nearly identical results [@freckletonMisuseResidualsEcology2002]. However, as correlation between these predictors increases, the residual-based approach becomes increasingly biased due to the way it partitions variance. This has led most recent studies to favor the 'Body size as a covariate' approach approach, wherein body size is explicitly included as a predictor of appendage length in a single regression model [e.g., @mcqueenThermalAdaptationBest2022; @rydingLongShorttermResponses2024; @romanoShrinkingBodySize2025].
+
+As mentioned above, the classical regression approaches rely on a foundational assumption that is rarely met in morphological datasets: that the independent variable $X$ is measured without error (CITE ZUUR, 2009). This assumption underlies not only ordinary least squares (OLS) regression, but also maximum likelihood and Bayesian models unless the model is explicitly structured to account for uncertainty in both variables. In studies of allometric scaling or relative appendage length, this assumption is clearly violated—measurement error is present in both body size and appendage length. When such error in $X$ is ignored, slope estimates become attenuated, i.e., biased toward zero. This attenuation bias increases as the correlation between $X$ and $Y$ decreases [@nte-linking-ols-sma; @greenMassLengthResiduals2001].
+
+# Statistical approaches suited for examining relative appendage length
+
+Alternative types of regression, like standardized major axis (SMA) regression, are better suited for problems of biological scaling as they assume that measurement error is present in both $X$ and $Y$ [@wartonBivariateLinefittingMethods2006]. The key difference between OLS and SMA regression is how they minimize residuals to generate a line of best fit [see figure 4 in @wartonBivariateLinefittingMethods2006]. OLS regression minimizes the residuals along the $Y$ axis, whereas SMA regression minimizes the residuals in both $X$ and $Y$ directions (similar to a principal components analysis with just 2 variable). This makes SMA regression well-suited for estimating the true functional relationship between two variables [@greenMassLengthResiduals2001; @wartonBivariateLinefittingMethods2006; @peigNewPerspectivesEstimating2009; @peigParadigmBodyCondition2010]. SMA regression has rarely been applied to studies seeking to understand the impacts of environmental gradients on body shape [but see @docampoMarkedReductionBody2019], but a recent simulation study by Skinner (2025, *in review*) show that two new approaches leveraging SMA regression can produce unbiased estimates of relative appendage length in a wide variety of hypothetical species that differ in 1) their response to increasing temperatures, and 2) the strength of appendage length – body size covariation. More research is needed to test these approaches in additional simulation studies as well as against real-world data sets.
+
+::: {#nte-flip-axes .callout-note icon="false"}
+## Building intuition for SMA regression
+
+One important feature of SMA regression is that the $X$ and $Y$ axes can be flipped and the line of best fit will not change [also see Figure 1 in @greenMassLengthResiduals2001]. When the axes are flipped, the points are also flipped across the SMA line of best fit (blue), where each point is an equal distance from the line but with the opposite sign (i.e., residuals flip signs). This has some important implications for measures of relative appendage length. Using the SMA (blue) regression line, you can see that the individual highlighted in green would be described as having relatively short appendages compared to the other individuals of this hypothetical species (panel A), or as having a large body size for its appendage length (plot B). These are inverse statements, which make sense for any given individual. Comparing the green point to the OLS (red) line, on the other hand, these logical & reciprocal statements do not apply. This convenient property of SMA regression is a function of the residuals being equally and oppositely correlated with both $X$ and $Y$ ($|r_{sma}| = 0.59$ in this hypothetical species). In OLS regression the residuals are not correlated with $X$ but highly correlated with $Y$ ($r_{ols} = 0.96$ in this example).
+
+![One important feature of SMA regression is that the X and Y axes can be flipped and the line of best fit will not change. In the plots below we flip the axes, & plot both the OLS (red) & SMA (blue) regression lines of best fit, as well as the same individual from our hypothetical species (highlighted in green).](../Figures/sma_flip_axes.png){#fig-sma_flip_axes width="100%"}
+:::
+
+::: {#nte-linking-ols-sma .callout-note icon="false"}
+## Linking allometric slopes in SMA and OLS regression
+
+There is a direct mathematical link between the slopes of OLS and SMA regression.\
+The slope of a predictor variable $X$ (e.g., body size) is related to the response variable $Y$ (e.g., appendage length) in OLS regression via the following equations:
+
+-   $\beta_{ols} = cov[X] / cov[Y]$ OR equivalently
+
+-   $\beta_{ols} = r * \frac{Sy}{Sx}$ where $r$ is the correlation between $X$ and $Y$, and $S$ is the standard deviation
+
+The slopes of OLS and SMA regression are related to each other via the following formula:
+
+-   $\beta_{sma} = sign(r) * \frac{Sy}{Sx}$ , i.e., if $r$ is negative then $\beta_{sma}$ is also negative.
+
+Which is equivalent to:
+
+$$
+\beta_{sma} = \beta_{ols} / r
+$$
+
+This makes it evident that as $r$ increases, $\beta_{\text{OLS}} \rightarrow \beta_{\text{SMA}}$ and that differences in slopes will be highest when $X$ and $Y$ are only weakly correlated.
+
+![The slopes from SMA and OLS regression are mathematically linked to where $\beta_{sma} = \beta_{ols} / r$, and thus, $\beta_{ols}$ underestimates the true functional relationship between body size and appendage length. The attenuation of $\beta_{ols}$ is greater as $r_{x,y} \rightarrow 0$.](../Figures/corr_sma_ols_slopes.png){#fig-corr_sma_ols_slopes width="100%"}
+:::
+
+## Assumptions of SMA
+
+Both classical regression approaches and SMA regression make several assumptions, which when violated can bias results [@greenMassLengthResiduals2001; @arnoldAllometricRelationshipSize2007]. Both regression approaches assume that $X$ and $Y$ are linearly related to each other, and that the residuals are independent, normally distributed, and homoskedastic. As these assumptions are handled extensively elsewhere [CITE Zuur ChX; @wartonBivariateLinefittingMethods2006], I will only focus on one assumption of SMA regression that has received little attention to date.
+
+SMA regression assumes that the measurement error in $X$ and $Y$ is proportional to the variance of $X$ and $Y$. To accurately estimate the measurement error in $X$ and $Y$, we would ideally have repeated measurements of body size and appendage length [@wartonBivariateLinefittingMethods2006], but repeated measurements are rarely collected in ecology. An alternative approach is to use the coefficient of variations from the empirical data to estimate the ratio of the errors in $X$ to $Y$ [$\lambda$; @arnoldAllometricRelationshipSize2007]. This assumption is very important and can be responsible for a large amount of variation that authors attribute to allometric scaling — for example, in a review of allometric scaling studies, Arnold and Green @arnoldAllometricRelationshipSize2007 found that 84% of the variation in the allometric slope estimates could be explained by the estimated $\lambda$. While it is important to test this assumption empirically (as with any statistical approach), I argue that SMA regression is a better starting point than assuming no measurement error in $X$ in nearly all studies of relative appendage length.
+
+## The error-in-variables model
+
+I argue that both classical regression approaches and the SMA approach make assumptions that can be limiting, and that the error-in-variables approach provides a more flexible alternative approach that directly models measurement error in $X$ and $Y$. One could model the true, unobserved value of the predictor ($X_{true}$) as being normally distributed around the observed values ($X_{obs}$) with some standard deviation $\sigma_x$, which represents the measurement error in $X$. Then we model the response variable $Y$ as depending linearly on the latent $X_{true}$, with its own residual error $\sigma_y$.
+
+$$
+X_{true} \sim N(X_{obs}; \sigma_x)
+$$
+
+$$
+Y \sim N(\alpha + \beta_{1} * X_{true};  \sigma_y)
+$$
+
+This can be done in a Bayesian or maximum likelihood framework, and these models can be directly extended to include additional biological complexity (e.g., phylogenetic or random effects, spatial or temporal autocorrelation, etc.). The gold standard is to collect repeat measurements on morphological traits $X$ and $Y$, and to model $\sigma_x$ and $\sigma_y$ explicitly. However, repeat measurements are rarely collected in ecology, and without them $\sigma_x$ and $\beta_1$ are not separately identifiable.
+
+Additional options that will more closely resemble biological reality (compared to classical regression) are to:
+
+-   Fix $\sigma_x$ to a plausible value based on previous studies or expert judgement (e.g., 1%, 5%, 10% of the mean). When introducing subjectivity of this nature it is advisable to conduct a sensitivity analysis to determine how results shift depending on $\sigma_x$.
+
+-   Use Bayesian priors to regularize error variance, and let the data and the prior jointly estimate $\sigma_x$ and $\sigma_y$
+
+# Underestimation of shape-shifting from warming temperatures
+
+Due to the attenuation of $\beta_{ols}$ (@fig-underestimation-ral), I believe that classical regression approaches will underestimate temperatures' impact on relative appendage length in species that adhere to Bergmann's and Allen's rule (or their temporal analogs). The attenuation of $\beta_{ols}$ leads to an overestimation of negative residuals in small individuals (i.e., points in the bottom left quadrant of the plot - labeled with a black "I" in @fig-underestimation-ral), and an overestimation of positive residuals in large individuals (labeled with a black "II" in @fig-underestimation-ral). In species that adhere to Bergmann's rules, temperature increases will select for smaller individuals, pushing individuals towards the bottom left quadrant of the plot (Section I) – exactly where classical regression approaches overestimate the negative residuals. In other words, classical regression approaches suggest that the individuals in Section I have relatively short appendages (i.e., negative residuals), whereas approaches acknowledging measurement error in $X$ (e.g., SMA regression) would more accurately label them as having relatively long appendages.
+
+![The allometric relationships of a single hypothetical species (i.e., each point is an individual bird) conforming to Bergmann's and Allen's rules. The SMA line of best fit is shown in blue, and the OLS regression line in red, and the points are colored by how much temperature has increased for a given individual of the hypothetical species.](../Figures/fig-underestimation-ral.png){#fig-underestimation-ral width="100%"}
+
+# Recommendations for examining Allen's rule
+
+1.  Examine appendage length *relative* to body size. It is also useful to examine absolute appendage length but the interpretation of support for Allen's vs Bergmann's rule is less clear.
+
+2.  Acknowledge the measurement error inevitable in both body size and appendage length
+
+    1.  Take repeat measurements and model measurement error explicitly
+
+    2.  Model $X_{true}$ as a latent variable centered around $X_{obs}$
+
+    3.  Approaches leveraging SMA regression are a safer starting place than methods assuming that all measurement error lies in $Y$
+
+3.  Examine the relevant assumptions for any statistical approach used.
+
+4.  Report coefficients of variation
+
+# Future research
+
+We do not have a clear understanding of how changes in allometry translate into the capacity for heat dissipation (CITE TOUCAN). However, leveraging statistical methods that allow for error in both $X$ and $Y$ more appropriately link our empirical data with allometric scaling theory, which is grounded in the physics .... Classical regression approaches have been used for statistical convenience.
 
 # Conclusions
 
 We are in the Anthropocene — a period of rapid global change dominated by habitat loss and climate change. While many species have not kept pace with these changes and have gone extinct, other species have been able to alter their shapes, sizes, ranges, and behaviors to adjust to this new human-dominated world. Understanding the sub-lethal, plastic or evolutionary responses is critical to understanding humanities’ full impact on biodiversity. With this knowledge, we will be better able to forecast changes to the natural world, as well as their impacts on ecosystem service provisioning.
+
+{{< pagebreak >}}
+
+# References
