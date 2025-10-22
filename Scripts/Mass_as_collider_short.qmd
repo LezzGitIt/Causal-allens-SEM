@@ -1,0 +1,256 @@
+---
+title: "Conditioning on body size acts as a collider in studies of Allen's rule"
+number-sections: true
+# If you do not want code to show... echo: false
+execute: 
+ echo: false
+ #include: false
+ message: false
+ warning: false 
+format: pdf
+include-in-header: # package float allows you to specify 'H' instead of 'h'
+      text: |
+        \usepackage{float} 
+editor: visual
+bibliography: ../Supp_files/EWPW.bib
+link-citations: true
+csl: ../Supp_files/methods-in-ecology-and-evolution.csl
+knitr:
+  opts_chunk: 
+    comment: "#>"
+    collapse: true
+editor_options: 
+  chunk_output_type: console
+---
+
+{{< pagebreak >}}
+
+```{r}
+#| label: Libraries
+
+library(ggplot2)
+library(dagitty)
+library(ggdag)
+```
+
+# Background
+
+Wildlife appear to be changing their size and shape in response to climate change. Temporal applications of Bergmann’s rule predict that body size will decrease with rising temperatures, while Allen’s rule posits that appendage length will increase. Because Allen’s rule concerns organismal shape, it is often interpreted in terms of appendage length relative to body size. This framing is important as absolute body size and appendage length are usually positively correlated, so isolating shape requires methods that account for the covariance with size.
+
+## Approaches to quantify relative appendage length {#sec-classical-approaches-mods}
+
+In a concurrent literature review (Skinner, in prep), I identify three predominant approaches used to quantify relative appendage length in the context of Allen’s rule, where $\beta_T$ is the estimand of interest in all three cases.
+
+1)  Ratio approach: Using the ratio of appendage length to body size as the response variable\
+    $\frac{Appendage}{\mathit{Body\ size}} \sim \beta_T * \mathit{Temperature\ increase}$
+
+2)  'Two-step residual regression' approach: Using residuals from an ordinary least squares (or similar) regression of appendage on body size\
+    Model 1: $Appendage \sim \beta_S * \mathit{Body\ size}$\
+    Model 2: $Residuals_{OLS} \sim \beta_T * \mathit{Temperature\ increase}$
+
+3)  'Multiple regression' approach: Including body size as a covariate in models predicting absolute appendage length, and interpreting $\beta_T$ as the impact of temperature on relative appendage length.\
+    $Appendage \sim \beta_S * \mathit{Body\ size} + \beta_T * \mathit{Temperature\ increase}$
+
+# Data simulation
+
+To compare the various methodological approaches I simulated three variables: log(appendage length), log(body size) using mass as a proxy, and temperature increase. Importantly, from here onward, 'mass' and 'body size' are used somewhat interchangeably, although the distinction is important later on where 'mass' refers to the measured proxy of body size, and 'body size' refers to the latent construct of structural body size. These 3 variables were jointly drawn from a multivariate normal (MVN) distribution:
+
+$$
+\begin{bmatrix}
+\text{Appendage (mm)} \\
+\text{Body size (g)} \\
+\text{Temperature increase (C)}
+\end{bmatrix}
+\sim \mathrm{MVN}(\boldsymbol{\mu}, \Sigma)
+$$ {#eq-mvn}
+
+where $\boldsymbol{\mu} = [log(180),\ log(80),\ 1.0]^\top$ is the mean vector, and $\Sigma$ is a $3 \times 3$ covariance matrix constructed to yield biologically plausible correlations among variables. Moprhological variables were simulated on the log scale to ensure that the specified correlations were maintained between temperature and morphological variables, which are generally log-transformed during analysis to linearize this relationship. Simulating from a multivariate normal distribution avoids biasing results toward any particular method. For example, simulating from a directional model, e.g.,
+
+$$
+\text{Appendage} \sim \alpha + \beta_S * \text{Body size} + \beta_T * \text{Temperature increase} + \epsilon
+$$
+
+would advantage methods that explicitly include mass as a covariate. Likewise, simulating a relationship between temperature and residuals would favor residual-based approaches. Instead, data is generated from the same joint distribution (@eq-mvn) so that no method is privileged by design.
+
+## Variance-covariance matrix
+
+Specification of the $3 \times 3$ covariance matrix determines the variance within variables and the relationships between variables. $\Sigma$ is defined as
+
+$$
+\Sigma = 
+\begin{bmatrix}
+\sigma_1^2 & \rho_{12} \sigma_1 \sigma_2 & \rho_{13} \sigma_1 \sigma_3 \\
+\rho_{12} \sigma_1 \sigma_2 & \sigma_2^2 & \rho_{23} \sigma_2 \sigma_3 \\
+\rho_{13} \sigma_1 \sigma_3 & \rho_{23} \sigma_2 \sigma_3 & \sigma_3^2
+\end{bmatrix}
+$$
+
+where $\sigma_1$, $\sigma_2$, and $\sigma_3$ are the standard deviations of $\log(\text{Appendage})$, $\log(\text{Body size})$, and $\log(\text{Temperature increase})$, respectively, and the correlation coefficients $\rho_{12}$, $\rho_{13}$, and $\rho_{23}$ control the pairwise associations among these traits. The different correlations between these three variables defined different 'hypothetical species', each responding differently to increasing temperatures, and in the strength of appendage length–mass covariation.
+
+Consistent with Bergmann's rule, temperature-morphology correlations were negative (-0.7 \< $\rho_{13}$ and $\rho_{23} \le$ 0, except in species exhibiting inverse allometry). These values were selected in line with published temperature-morphology correlations from literature reviews in birds [@ashtonPatternsWithinSpeciesBody2002] and mammals [@ashtonBergmannsRuleValid2000]. Increasing temperatures decreased the size of at least one morphological trait in all simulations.
+
+In summary, the specified values of $\sigma_1$ and $\sigma_2$ produce plausible distributions of appendage length and mass, while simultaneously producing the desired scaling relationship for the specified correlation $\rho_{12}$. $\sigma_2$ was set at 0.18 as this produced temperature increases in line with climate change. Temperature-morphology relationships were set so that, with an increase in temperature, species either got 1) relatively longer, such that the decrease in mass was greater than the decrease in appendage length (i.e., $\rho_{13} > \rho_{23}$), 2) relatively fatter ($\rho_{13} < \rho_{23}$), or 3) decreased in appendage length and mass proportionally ($\rho_{13} = \rho_{23}$) so that body shape doesn't change.
+
+# Results
+
+NOT SHOWN The multiple regression approach returned negatively biased estimates of temperature's impact on relative appendage length ($\beta_T$), whereas the ratio approach was positively biased (not shown). The different approaches showed nearly identical rank-order patterns in estimates of relative appendage length using two empirical data sets (results not shown). Importantly, the method used had a major impact on the biological conclusions drawn regarding temperature-relative appendage length gradients. Given that the multiple regression approach is the most commonly used statistical approach to examine Allen's rule, I will focus on that from here forward.
+
+The multiple regression approach implies that the total effect of temperature on appendage length consists of a direct path $Temperature \rightarrow Appendage$ and an indirect path that operates via changes in body size, $Temperature \rightarrow Size \rightarrow Appendage$. The sign and magnitude of $\beta_T$ will depend on the relative strength of the two causal paths. The negative bias is greatest when the correlation between mass and appendage is low, as the model attributes less variance in absolute appendage length to mass and more to temperature.
+
+```{r}
+#| label: fig-DAG
+#| fig-cap: The directed acyclic graph (DAG) implied by the 'multiple regression' approach. The causal relationship between temperature and body size is not implied by the model, but there is strong evidence that a causal relationship exists (Bergmann's rule). In this study, there was a negative correlation between temperature and body size in both empirical data sets and biologically plausible simulated species. 
+#| fig-pos: 'H'
+
+# Specify DAG
+dag_allen <- dagify(
+  Appendage ~ Mass + Temperature,
+  Mass ~ Temperature,
+  exposure = c("Temperature"), 
+  outcome = "Appendage",
+  labels = c("Temp" = "Temperature")
+)
+adjustmentSets(dag_allen)
+
+# Plot
+tidy_dagitty(dag_allen, layout = "fr") %>% 
+  ggdag_status(text_col = "black",
+               text = TRUE, 
+               edge_type = "link_arc",
+               node_size = 20,
+               text_size = 3, 
+               stylized = TRUE) + 
+  theme_dag() + 
+  guides(fill = "none", color = "none")
+```
+
+# Discussion
+
+In order for the multiple regression approach to produce unbiased estimates of temperature's impact on relative appendage length ($\beta_T$), the true causal relationship must be that mass 'causes' appendage length. This may be the case, for example, if changes in body mass of a migratory bird lead to changes in wing length that allow species to maintain migration [e.g., @weeksSharedMorphologicalConsequences2020]. This is also the theoretical model assumed by papers comparing methodologies to assess Allen's rule in the past [@rydingMultipleRegressionNot2025].
+
+However, in the present study mass and appendage length were drawn from a MVN distribution, such that there is no causal relationship between the two morphological variables. This simulation implies a DAG where some unknown variable produces the correlation between mass and appendage length. This could be the case if, for example, increased food availability during nestling development resulted in larger young (i.e., with larger structural body size, both weighing more and having longer appendages).
+
+```{r}
+#| label: mass-collider
+#| fig-cap: Conditioning on mass opens up a backdoor path between temperature and length through the unknown variable 'Unk'. This creates a spurious statistical association between 'Temp' and 'Unk' (which were previously independent), and that association propagates onto Length.
+#| fig-pos: 'H'
+
+# In the case where appendage causes mass, or when Unk causes mass and appendage, mass is an endogenous collider (meaning it is induced by your statistical estimator, not sampling like skill and attractiveness in actors; Temp → Mass ← Unk), so adjusting for Mass actually opens a spurious path
+# E.g., Imagine a population of cliff-nesting seabirds (say, something gull-like) that colonizes a windy, open-ocean environment where long, gliding flight is beneficial. Once the wings are larger, they can carry more weight. This relaxes the aerodynamic constraint that usually keeps body mass small. Selection for larger wings creates the biomechanical “space” for larger mass to evolve. Albatrosses, condors, vultures. 
+# 'The causes are not in the data' - McElreath
+
+# This DAG specifies that mass and length are correlated b/c some unknown factor U influences both of them! 
+dag_cor <- dagify(
+  Mass ~ Temp + Unk, # + Size 
+  Length ~ Temp + Unk, # + Size 
+  #latent = c("Unk", "Size"),
+  exposure = c("Temp"),
+  outcome = "Length",
+  labels = c(
+    Temp = "Temperature"
+  )
+)
+
+tidy_dagitty(dag_cor, layout = "fr") %>% 
+  ggdag_status(text_col = "black",
+               text = TRUE, 
+               edge_type = "link_arc",
+               node_size = 20,
+               text_size = 3, 
+               stylized = TRUE) + 
+  theme_dag() + 
+  guides(color = "none")
+```
+
+```{r}
+#| label: adjustment-set-single-spp
+#| echo: true
+
+adjustmentSets(dag_cor)
+```
+
+The adjustment set is empty because to we should not condition on anything to get the direct effect of temperature on appendage length. However, to get the impact on *relative* appendage length, we must condition on mass. Herein lies the problem. The multiple regression model is negatively biased because mass is a collider variable, so adjusting for mass opens a spurious path. In other words, holding mass constant, the relationship between temperature and (appendage) length is negative, despite the fact that the data were simulated such that relative appendage length increases with increasing temperature (@fig-mass-collider).
+
+![Relationship between temperature and log(appendage length) when log(mass) is stratified into quartiles within a single hypothetical species (i.e., each point is an individual of the hypothetical species). In this particular hypothetical species, temperature had no direct effect on appendage size in the simulation (the correlation was 0), it indirectly increases appendage length by reducing body mass. Conditioning on mass in a multivariate model removes this indirect effect and induces a spurious negative association between temperature and appendage size. In causal modeling parlance, this is known as 'over-adjustment bias'.](../Figures/Mass_as_collider.png){#fig-mass-collider}
+
+The bias observed in species simulated to get 'much longer' is a particularly poignant example of what happens when we condition on mass (@fig-mass-collider). These 'much longer' species exhibit inverse allometry, such that a temperature increase results in species increasing in appendage length and decreasing in mass. These species are clearly longer relative to their body size, and the total effect of temperature on absolute (as well as relative) appendage length is positive, but this is entirely through the indirect path of $Temperature \rightarrow Mass \rightarrow Appendage$. The multivariate model attempts to estimate the effect of temperature while holding mass constant (removing the only pathway through which temperature influences appendage length), and the model ends up assigning a spurious negative coefficient to temperature due to the combination of conditioning on a collider (i.e., mass) and the negative correlation between mass and temperature (@fig-mass-collider).
+
+Taxonomic scale is important, and it is a different story when we have a multi-species analysis (thus far, everything discussed has been within single species). While we still can't condition directly on 'Unk', we can use the phylogeny to approximate whatever unknown factors might contribute to correlated mass and length values between species (@fig-multi-species-phylogeny). Thus, by conditioning on phylogeny we are able to condition on mass as well, and we are able to obtain our estimate of interest.
+
+```{r}
+#| label: fig-multi-species-phylogeny
+#| fig-cap: Phylogeny serves as a proxy for 'Unk' and helps to account for whatever unknown factors might contribute to correlated mass and length values between species. By conditioning on phylogeny, we are able to condition on mass as the backdoor path through 'Unk' is closed.  
+#| include: true
+#| fig-pos: 'H'
+
+dag_cor_phy <- dagify(
+  Mass ~ Temp + Unk, # + Size
+  Length ~ Temp + Unk, # + Size
+  Unk ~ Phylogeny,
+  #latent = "Unk",
+  exposure = c("Temp", "Mass"),
+  outcome = "Length",
+  labels = c(
+    Temp = "Temperature"
+  )
+)
+
+tidy_dagitty(dag_cor_phy, layout = "fr") %>% 
+  ggdag_status(text_col = "black",
+               text = TRUE, 
+               edge_type = "link_arc",
+               node_size = 20,
+               text_size = 3, 
+               stylized = TRUE) + 
+  theme_dag() + 
+  guides(color = "none")
+```
+
+```{r}
+#| label: adjustment-set-mult-spp
+#| echo: true
+
+adjustmentSets(dag_cor_phy)
+```
+
+# Some better alternatives
+
+## Latent factor model
+
+An alternative approach is to model the true structural body size as a latent trait that is not directly observed, but estimated through the shared variance between the traits mass and length. These factor loadings are estimated from the data and indicate the extent to which each trait reflects the common latent factor of structural body size. Variance is partitioned between shared structure and trait-specific deviations.
+
+![Path diagram showing a hypothetical model that could be used to test Allen's rule for any number of appendages. Ovals represent latent variables and rectangles represent measured variables. M1 - M3 represent multiple measurements of mass at an appropriate time scale; A1 - A3 represent three distinct appendages (e.g., tarsus, wing, and bill length). Repeat measurements could also be taken for appendage variables, but transient fluctuations in mass are almost certainly more important to account for. Intercepts and residual errors are implied and thus not shown.](../Figures/path_diagram.pdf)
+
+## SLI: Standardized length index
+
+While this latent factor model accounting for measurement error seems like the principled (i.e., not clever) way to handle this issue, many people are simply not comfortable with hierarchical models, and so I’ve been exploring a simpler solution. My thought was to come up with a standalone metric of relative appendage length (SLI), and then test the direct effect of temperature on this metric.
+
+Peig & Green [-@peigNewPerspectivesEstimating2009]; [-@peigParadigmBodyCondition2010] revolutionized the way we estimate body condition, using allometric scaling theory to create the standardized mass index [see 3 step process outlined on pages 1886 & 1887 of @peigNewPerspectivesEstimating2009]. We employ a similar process but instead create the standardized length index (SLI), where (appendage) length is on the y-axis. To calculate the SLI for individual $i$ of species $j$, first take the mean of the body size trait in question (i.e., mass in this case) of species $j$, which serves to standardize against the appendage length of individual $i$. We call this $S_0$ to denote the reference size, similarly to @peigNewPerspectivesEstimating2009, [-@peigParadigmBodyCondition2010].\
+\
+$S_0 = mean(log(\mathit{Body\ size}))$
+
+$SLI_i = \log(\text{Appendage}_i) * \dfrac{S_0}{\log(\text{Body size}_i)^{\beta_{SLI}}}$
+
+Finally, one can model the SLI as a function of temperature increase.
+
+$$
+SLI \sim \mathit{Temperature\ increase}
+$$
+
+The slope $\beta_{SLI}$ can be estimated empirically as the functional relationship between $X$ and $Y$, or $\beta_{SLI}$ can be set to a value with biological significance. In either case, the SLI serves to reproject the appendage length of individual $i$ along the scaling slope $\beta_{SLI}$ to the appendage length the individual would have at the reference body size, $S_0$. Estimating $\beta_{SLI}$ empirically maintains the scaling relationship observed in the data, whereas setting $\beta_{SLI}$ to a biologically significant value allows for comparison of our observed data to a hypothetical species exhibiting that scaling relationship. For example, assuming that mass was used as the proxy for body size, setting $\beta_{SLI} = 0.33$ represents a species exhibiting isometric scaling, where $length \propto mass^{1/3}$. Thus, setting $\beta_{SLI}$ = 0.33 reprojects the appendage length of individual $i$ to the appendage length it would have at the reference body size, $S_0$, but along an isometric scaling slope.
+
+# Questions
+
+The primary questions that I would love your thoughts on are fourfold:
+
+-   First, assuming that we do not know the causal relationship between mass and appendage, have I come to the right conclusion that the multiple regression approach (using mass as a covariate) will lead to biased results?
+
+-   Second, would the latent variable model (with size as latent) be the more appropriate method to test Allen’s rule?
+
+-   Third, do you think the standardized length index is a reasonable alternative for those that are uncomfortable with coding their own bespoke hierarchical models? I know you stressed NOT to be clever in your lectures, but I’m wondering whether I may have stumbled upon something that will work in most situations, and would be an improvement over fitting a multiple regression model when the causal relationships between appendage and mass are generally not known (this is the default). 
+
+-   Fourth, are there any sections of Statistical Rethinking that you think would be particularly helpful in shaping my thinking on these questions?
+
+{{< pagebreak >}}
+
+# References
