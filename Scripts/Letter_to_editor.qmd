@@ -1,0 +1,39 @@
+---
+title: "Letter to editor"
+editor: visual
+bibliography: ../Supp_files/Morphology.bib
+link-citations: true
+csl: ../Supp_files/methods-in-ecology-and-evolution.csl
+---
+
+# Instructions
+
+Nature comms - 'avoid repeating information that is already present in the abstract and introduction'
+
+The synopsis should outline the basic structure of the article; list the material to be covered with an indication of the proposed depth of coverage; indicate how the material will be logically arranged; and list some of the key references that will be included. The synopsis should be accompanied by a 300-500 word outline of the background to the topic which summarises the progress made to date and gives the rationale and timing for considering the Review.
+
+# Letter to editor
+
+Dear XX, \
+\
+Thank you for your consideration of my article 'Beyond Bergmann and Allen: A Unified Framework for Thermoregulatory Morphology'. Within, I propose a new ecogeographical rule, the 'Thermo-Morpho Rule', which views size and shape as complementary axes of thermoregulatory adaptation. The rule calls for the unification of Bergmann's and Allen's rules, as both are governed by the same biophysical principle – that surface area to volume ratios mediate heat exchange.
+
+# Synopsis
+
+I begin by highlighting the need for this rule with a review of the literature in the last 5 years [since the seminal review of @rydingShapeshiftingChangingAnimal2021] to determine how often Bergmann's and Allen's rules have been analyzed in concert vs. in isolation. Of XX papers that met our criteria, only YY% analyzed Bergmann's and Allen's rules together. I then highlight what we risk by analyzing Bergmann's and Allen's rules in isolation – drawing heavily on 2 recent papers published in *Nature Communications* [@frohlichAllometryRevealsTradeoffs2023; @baldwinComplementarityAllensBergmanns2023], as well as the broader literature. I argue that we may miss 1) trade-offs - where the studied trait (e.g., body size) is functionally constrained and thus doesn't respond to temperature; 2) complementarity - combined changes to size and shape that together amount to important adjustments to the surface area–to–volume ratio, and finally, 3) interactions - codependency between size and shape that jointly determine organismal response across temperature gradients. Finally, I stress that the potential for trade-offs, complementarity, and interactions is not restricted to morphology, but has co-evolved along with physiology, coloration, phenology, and behavior to meet thermoregulatory needs [e.g. trade-offs in @smithPredictingWoodratNeotoma2006; complementarity in @briscoeBergmannMeetsScholander2015; and interactions in @playa-montmanyBehaviouralPhysiologicalResponses2023]. Thus, a natural next step is to formalize a broader Thermo-Adaptive Framework, encompassing any adaptive thermoregulatory approach. The Thermo-Adaptive Framework is best viewed as a conceptual framework that can help raise awareness of trade-offs, complementarity, and interactions amongst adaptive thermoregulatory approaches. It is not an explicit rule that can be tested in the way that the Thermo-Morpho rule could be. I conclude by highlighting an integrated modeling framework that jointly estimates Bergmann’s and Allen’s rules and can be expanded to include additional traits, providing a practical path toward studying thermal adaptation across multiple traits.
+
+# Background
+
+Several important reviews cover adherence (and lack thereof) to Bergmann's rule [@ashtonPatternsWithinSpeciesBody2002], potential mechanisms [@yom-tovRecentSpatialTemporal2011], and implications in the face of climate change [@gardnerDecliningBodySize2011; @teplitskyClimateWarmingBergmanns2014], although there is little conducted recently [but see @theriotHarnessingNaturalHistory2023]. @rydingShapeshiftingChangingAnimal2021 is an excellent review of Allen's rule and its applications in the Anthropocene, while @guoApplyingBergmannsRule2025 discusses conservation applications of Bergmann's rule. There have been several empirical global tests of Bergmann's rule \[e.g. @he2023global\], Allen's rule [e.g. @alhajeriGlobalTestAllens2020], and recent global work that has jointly analyzed Bergmann's and Allen's rules [@frohlichAllometryRevealsTradeoffs2023; @baldwinComplementarityAllensBergmanns2023; @youngfleshAbioticConditionsShape2022].
+
+Given the shared thermoregulatory basis, some authors have discussed the interrelatedness of the ecogeographical rules [e.g., CITE ASHTON, @gastonEcogeographicalRulesElements2008], but none have explicitly argued for their joint and integrated analysis. Recent empirical work has called for their joint analysis [@frohlichAllometryRevealsTradeoffs2023; @baldwinComplementarityAllensBergmanns2023], providing extremely compelling evidence for the existence of trade-offs, complementarity, and interactions at large spatial and taxonomic scales. Despite this, authors are still largely analyzing Bergmann's and Allen's rules in isolation. Thus, the present perspective paper highlights the disconnect between their current isolated treatment, despite the conceptual and analytical benefits of a joint approach. To date, no review has examined how often Bergmann's and Allen's rules have been studied together, or proposed a unified framework linking size, shape, and thermoregulatory capacity.
+
+# Questions for the editor
+
+If the editors think this paper has potential for publication in *Nature communications*, I seek their guidance regarding formatting of the final paper. The current paper has elements of a review, perspective, comment, or even a 'matters arising' piece [given the important contributions from @frohlichAllometryRevealsTradeoffs2023 and @baldwinComplementarityAllensBergmanns2023]. Could the paper stand as is as a (short) perspective piece? I would also be happy to condense the current piece to be a better fit for a comment or a 'matters arising' piece.
+
+If the editors believe a perspective piece would be the most appropriate, but that more substance is needed, I have thought a lot about the analytical approaches commonly employed to analyze Bergmann's and Allen's rules. I could expand on the integrated model I propose, as it can address several longstanding issues in studies of environment-morphology studies: 1) body size is inherently multivariate, 2) measurement error, and 3) accounting for allometric scaling without assuming directional causality. I am also happy to remove the 'An integrated model' section altogether if the editors see it as out of scope (e.g., for a comment or 'matters arising' piece).
+
+{{< pagebreak >}}
+
+# References
