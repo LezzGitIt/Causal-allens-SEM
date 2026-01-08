@@ -1,0 +1,321 @@
+---
+title: "Reevaluating Allen's rule from a causal modeling perspective"
+number-sections: true
+# If you do not want code to show... echo: false
+execute: 
+ echo: false
+ #include: false
+ message: false
+ warning: false 
+format: pdf
+include-in-header: # package float allows you to specify 'H' instead of 'h'
+      text: |
+        \usepackage{float} 
+editor: visual
+bibliography: ../Suppfiles/Morphology.bib
+link-citations: true
+csl: ../Suppfiles/methods-in-ecology-and-evolution.csl
+knitr:
+  opts_chunk: 
+    comment: "#>"
+    collapse: true
+editor_options: 
+  chunk_output_type: console
+---
+
+{{< pagebreak >}}
+
+# Outline
+
+-   Multiple regression approach is common
+
+    -   Could include lit review here to show that most authors are conditioning on mass without thinking about the causal model ahead of time
+
+-   Establish that this is a causal question and we must approach the question with causal models
+
+-   Show that we want the direct effect of temperature on appendage, not the total effect
+
+-   Mass as a collider
+
+-   Solution: Size as a latent variable
+
+-   Discuss what determines the extent of the bias inflicted by blindly conditioning on mass
+
+    -   How good of a proxy mass is for size
+
+    -   Strength of direct Temp -\> Length and indirect Temp -\> Mass → Length relationships
+
+-   Show a full complexity example with both unknowns and latent size
+
+    -   Real biological systems likely have further complications
+
+    -   Severity of the bias additionally depends on how strongly unknown influences both Mass and Length
+
+-   Discussion
+
+    -   There is no analytical rule that will fit all situations. Instead, we must draw out our causal assumptions and structure our analysis accordingly
+
+        -   Make your assumptions transparent (explicit)
+
+    -   With that said, treating size as latent should become the default as it solves several issues simultaneously
+
+    -   Measurement error amplifies collider bias
+
+    -   If temperature makes organisms smaller and there is positive allometry between mass and appendage (true in most systems), the bias from conditioning on mass will be negative. This suggests that we have underestimated the extent that organisms are shape-shfiting in response to climate change / temperature gradients.
+
+# Background
+
+Wildlife appear to be changing their size and shape in response to climate change. Temporal applications of Bergmann’s rule predict that body size will decrease with rising temperatures, while Allen’s rule posits that appendage length will increase. Because Allen’s rule concerns organismal shape, it is often interpreted in terms of appendage length relative to body size. This framing is important to keep in mind as absolute body size and appendage length are usually positively correlated, so isolating shape requires methods that account for the covariance with size.
+
+# Statistical approaches 
+
+Many scientists have argued that including mass (or a different proxy of body size) as a covariate in models in models is the appropriate way to address Allen's rule. In the following model you can then interpret $\beta_T$ as the impact of temperature on relative appendage length.\
+$Appendage \sim \beta_S * \mathit{Body\ size} + \beta_T * \mathit{Temperature\ increase}$
+
+This has been termed the 'multiple regression' approach [@rydingMultipleRegressionNot2025], and it makes a lot of sense. From a physics perspective, body size and appendage length should covary in predictable ways (i.e., allometry) due to the forces required to sustain movement.
+
+# Do we need causal inference?
+
+As organisms respond to global change through shifts in body size and shape, these patterns are often described using statistical associations between temperature and morphology. However, the goal of inference is often predicting how species may respond in future climates that are warmer / drier. Predictive modeling through statistical associations can be accurate as long as future climates resemble those that the data were collected in, but will fail when climates as well as the underlying ecological and evolutionary processes change. Thus, our interest here is fundamentally causal: we seek to understand how morphology would respond if temperature itself were altered, independent of the many factors that co-vary with climate, including habitat conversion, resource availability, and community structure.
+
+# Direct vs indirect effect
+
+Allen’s rule is about how temperature influences appendages. Allen's original article is vague about whether this refers to absolute or relative appendage length, although it implied relative appendage length in some statements. Recent articles have also argued that Allen's rule should be interpreted as a question about relative appendage length [@symondsItsAllRelative2025]. While Allen certainly did not have a causal modeling framework in mind, his intuition to keep his prose vague was correct - the answer regarding relative or absolute appendage length depends on our causal assumptions about the system. In a causal modeling framework, the more appropriate question is whether we are after the direct or indirect effect of temperature on appendage length.
+
+```{r}
+#| label: Libraries
+
+library(ggplot2)
+library(dagitty)
+library(ggdag)
+```
+
+```{r}
+#| label: create-dag-fn
+
+create_dag <- function(mass_pred, length_pred,
+                       latent_size = FALSE,
+                       add_formula = NULL){
+
+  mass_formula   <- as.formula(paste("Mass ~",   deparse(substitute(mass_pred))))
+  length_formula <- as.formula(paste("Length ~", deparse(substitute(length_pred))))
+
+  args <- list(
+    mass_formula,
+    length_formula,
+    exposure = "Temp",
+    outcome  = "Length",
+    labels   = c(Temp = "Temperature")
+  )
+
+  if (latent_size) args$latent <- "Size"
+
+  if (!is.null(add_formula)) {
+    add_formula <- as.formula(add_formula)
+    args <- c(list(add_formula), args)
+  }
+
+  do.call(dagify, args)
+}
+```
+
+```{r}
+#| label: plot-dag-fn
+
+plot_dag <- function(dag_obj){
+  tidy_dagitty(dag_obj, layout = "fr") %>% 
+  ggdag_status(text_col = "black",
+               text = TRUE, 
+               edge_type = "link_arc",
+               node_size = 20,
+               text_size = 3, 
+               stylized = TRUE) + 
+  theme_dag() + 
+  guides(color = "none")
+}
+```
+
+We can examine a Directed Acyclic Graph (DAG) to understand why. The question of interest asked by proponents of using relative appendage length is - how does temperature influence appendage length controlling for body size? This question implies the following DAG:
+
+```{r}
+#| label: fig-default-dag
+#| fig-cap: Researchers often suggest that we must control for body size when addressing Allen's rule, which implies the following DAG. The orange circle is our exposure variable and the teal circle is our outcome variable, and the arrow connecting them is the relationship we are interested in. 
+
+# The 'default' DAG, what is assumed by the standard mass as a covariate approach
+dag_def <- create_dag(mass_pred = Temp, length_pred = Temp + Mass)
+
+# Plot
+plot_dag(dag_def)
+```
+
+In this worldview it is absolutely correct to condition on mass to obtain the direct effect of temperature on appendage length. However, this depends on the DAG above being the correct one. That is, the true causal relationship must be that mass 'causes' appendage length. This may be the case, for example, if changes in body mass of a migratory bird lead to changes in wing length that allow species to maintain migration [e.g., @weeksSharedMorphologicalConsequences2020].
+
+```{r}
+#| label: adjustment-set-direct-def-dag
+
+# Stratify by mass
+adjustmentSets(dag_def, effect = "direct") #total
+
+# Generally, there are no conditional independencies amongst the variables that we care about in these causal systems (one except, see below). This is because temp, length, and mass all share information (directly, or through the latent variables that underlie them) even after conditioning on confounds
+impliedConditionalIndependencies(dag_def)
+```
+
+On the other hand, no control is needed to get the total effect of temperature on appendage length. This is because the total effect includes both the direct path $Temperature \rightarrow Appendage$ and an indirect path that operates via changes in body size, $Temperature \rightarrow Size \rightarrow Appendage$.
+
+```{r}
+#| label: adjustment-set-total-def-dag
+
+adjustmentSets(dag_def, effect = "total")
+```
+
+# When should we control for body size? 
+
+So if we're after the direct effect of temperature on appendage length should we always condition on mass? No. If there is no relationship between mass and appendage length, why include mass in your statistical model? Even if there is shared association between mass and appendage length, it is possible that this is just due to the shared influence of temperature.
+
+```{r}
+#| label: fig-shared-temp
+#| fig-cap: A statistical association between mass and length doesn't necessarily mean that you must control for mass in your model. Indeed, if temperature influences both length and mass this will create a statistical association, but length and mass are independent if you condition on temperature. 
+
+no_corr_dag <- create_dag(mass_pred = Temp, length_pred = Temp)
+
+# Plot
+plot_dag(no_corr_dag)
+
+impliedConditionalIndependencies(no_corr_dag)
+```
+
+Note the conditional independencies implied by this model. This says that length is independent of mass when you condition on temperature. These conditional independencies can actually be tested with the data, which can help scientists refine their causal models. However, in the case when all variables truly influence one another [e.g., @fig-default-dag], the data cannot tell us what the appropriate causal structure is. More on this later (maybe, bit of a tangent really).
+
+## Mass as a collider
+
+Alternative causal assumptions show why blindly conditioning on mass can get you into trouble. In the case where appendage causes mass, instead of the other way around, mass acts as an endogenous collider (meaning it is induced by your statistical estimator, not sampling) and actually opens a spurious path between temperature and appendage length. This version of causality is also biologically plausible. Imagine a population of cliff-nesting seabirds that colonizes a windy, open-ocean environment where long, gliding flight is beneficial (e.g., albatrosses). Once wings are larger they can carry more weight, relaxing the aerodynamic constraint that previously kept body mass small. In this case, selection for larger wings creates the biomechanical “space” for larger mass to evolve.
+
+```{r}
+#| label: fig-dag-rev
+
+# What if we reverse the causal arrow on mass and length?
+dag_rev <- create_dag(mass_pred = Temp + Length, length_pred = Temp)
+
+# No adjustment set needed
+adjustmentSets(dag_rev, effect = "direct") 
+
+# Plot
+plot_dag(dag_rev)
+```
+
+Even if you don't find the above hypothetical scenario convincing, there are other conceptual models where mass acts as a collider. For example, if some shared variable influences both mass and length, but there is no direct relationship between them, conditioning on mass once again opens a spurious path. This shared variable could take many forms, but will often involve a selective force that influences both body size and movement. For example, the megafaunal extinction of the Late Pleistocene could have reduced body and appendage size of surviving predators due to smaller prey and a selection for agility and maneuverability over movement efficiency, respectively. Importantly, there is no causal association between appendage length and mass in this conceptual model, which is surely scale dependent, although has happened in the past (e.g. decoupling of forelimb and body size allometry at the origin of birds; Dececchi & Larsson, 2013).
+
+```{r}
+#| label: fig-dag-unk
+#| fig-cap: Conditioning on mass opens up a backdoor path between temperature and length through the unknown variable 'Unk'. This creates a spurious statistical association between 'Temp' and 'Unk' (which were previously independent), and that association propagates onto Length.
+#| fig-pos: 'H'
+
+# Prey size (unknown) could be latent because we can’t know exactly how big prey were, but can use things like the fossil record to estimate it.
+dag_unk <- create_dag(mass_pred = Temp + Unk, length_pred = Temp + Unk)
+
+# No adjustment set needed! AND mass acts as a collider, so the path is closed unless you condition on Mass. 
+adjustmentSets(dag_unk, effect = "direct") 
+
+# If there is no direct arrow between mass and length, then length is independent of mass when conditioned upon temperature and unknown
+impliedConditionalIndependencies(dag_unk)
+
+# Plot
+plot_dag(dag_unk)
+```
+
+### Simulation
+
+To further illustrate this phenomenon, I simulated correlated data consistent with the previous DAG. Holding mass constant, the relationship between temperature and (appendage) length is negative, despite the fact that the data were simulated such that relative appendage length increases with increasing temperature (@fig-mass-collider).
+
+![Relationship between temperature and log(appendage length) when log(mass) is stratified into quartiles within a single hypothetical species (i.e., each point is an individual of the hypothetical species). In this particular hypothetical species, temperature had no direct effect on appendage size in the simulation (the correlation was 0), it indirectly increases appendage length by reducing body mass. Conditioning on mass in a multivariate model removes this indirect effect and induces a spurious negative association between temperature and appendage size. In causal modeling parlance, this is known as 'over-adjustment bias'.](../Figures/Mass_as_collider.png){#fig-mass-collider}
+
+The bias observed in species simulated to get 'much longer' is a particularly poignant example of what happens when we condition on mass (@fig-mass-collider). These 'much longer' species exhibit inverse allometry, such that a temperature increase results in species increasing in appendage length and decreasing in mass. These species are clearly longer relative to their body size, and the total effect of temperature on absolute (as well as relative) appendage length is positive, but this is entirely through the indirect path of $Temperature \rightarrow Mass \rightarrow Appendage$. The multivariate model attempts to estimate the effect of temperature while holding mass constant (removing the only pathway through which temperature influences appendage length), and the model ends up assigning a spurious negative coefficient to temperature due to the combination of conditioning on a collider (i.e., mass) and the negative correlation between mass and temperature (@fig-mass-collider).
+
+### Size as a latent variable
+
+On small spatial, temporal, or taxonomic scales (e.g. within a single species), conceptual models where size and appendage length are not causally related may be possible. However, this is exceedingly unlikely at large scales. For example, when examining temperature's influence on mass and appendage length across all mammals, from a mouse to an elephant, allometry and physics will play an outsized role in determining mass and appendage covariance. For example, in a study of XX bird species, the effect of allometry was 20x greater than the effect of temperature on the length of bird wing bones [@weeksLongerWingBones2025].
+
+In these cases, the allometric scaling relationship will dominate any signal of temperature's impact on wing length. Accounting for allometry is critical in these studies. However, the simulation shows that conditioning on mass can produce biased estimates depending on the causal relationships of our scientific model. The causal directionality between mass and appendage length is exceedingly difficult to know with certainty, making the blind conditioning on mass an unsafe (potentially biased) solution. An alternative approach is to model the true structural body size as a latent trait that is not directly observed, but estimated through the shared variance between the traits mass and length.
+
+```{r}
+#| label: fig-dag-size
+#| fig-cap: Treating size as a latent variable that is influenced by both appendage length and body mass has several advantages.
+
+# Size is composed of multiple indicator variables. Temp influences size and additionally influences length. 
+dag_size <- create_dag(
+  mass_pred   = Size,
+  length_pred = Temp + Size ,
+  latent_size = TRUE, # TRUE
+  add_formula = "Size ~ Temp"
+)
+
+# If size is latent, this model has no valid adjustment set (we're screwed)
+adjustmentSets(dag_size, effect = "direct") 
+
+plot_dag(dag_size)
+```
+
+We must condition on size to achieve an unbiased estimate of the direct effect of temperature on length. Given that size is latent, this requires assistance from other statistical estimators like structural equation modeling or latent factor modeling.
+
+### Extent of bias
+
+As the literature review shows, \~80% of studies have used the multiple regression approach to address Allen's rule. Assuming that @fig-dag-size encompasses the true causal relationships, what determines the extent of bias in the literature? And will estimates always be negatively biased?
+
+-   How good of a proxy mass is for body size
+
+-   Extent of measurement error in mass
+
+-   Strength of direct Temp -\> Length and indirect Temp -\> Mass → Length relationships
+
+# Full complexity example
+
+Biological systems are overwhelmingly complex. In reality, it is likely that both temperature and unknown forces (e.g., prey size in our previous example) causally influences size and length.
+
+```{r}
+#| label: dag-full-complex
+
+dag_full_complex <- create_dag(
+  mass_pred   = Size,
+  length_pred = Temp + Size + Unk,
+  latent_size = FALSE, # TRUE
+  add_formula = "Size ~ Temp + Unk"
+)
+
+# This model has no valid adjustment set (we're screwed)
+adjustmentSets(dag_full_complex, effect = "direct") 
+
+plot_dag(dag_full_complex)
+```
+
+Under this conceptual model it is necessary to condition on both size and the mysterious unknown force that jointly influences size and length. While we can't condition directly on 'Unk', in a cross-taxa application we can use the evolutionary history of the species (i.e., approximated via the phylogeny) to approximate whatever unknown factors might contribute to correlated size and length values between species (@dag-full-complex-phylogeny). Ignoring these unknowns can further bias the estimate of temperatures influence on math, where the severity of the bias depends on the strength of the influence between the unknown factors and size and length. Fortunately, accounting for the phylogenetic relationships between species is regularly done in studies cross-taxa studies of Allen's and Bergmann's rules, a positive for the field.
+
+```{r}
+#| label: fig-dag-full-complex-phylogeny
+#| fig-cap: Phylogeny serves as a proxy for 'Unk' and helps to account for whatever unknown factors might contribute to correlated size and length values between species.
+#| include: true
+#| fig-pos: 'H'
+
+dag_full_complex <- create_dag(
+  mass_pred   = Size,
+  length_pred = Temp + Size + Unk,
+  latent_size = TRUE, # TRUE
+  add_formula = "Size ~ Temp + Unk + Phylogeny"
+)
+
+# This model has no valid adjustment set (we're screwed)
+adjustmentSets(dag_full_complex, effect = "direct") 
+
+plot_dag(dag_full_complex)
+```
+
+# Discussion
+
+-   Causal modeling framework requires that we make our assumptions transparent (explicit)
+
+-   Measurement error amplifies collider bias
+
+-   One ‘problem’ with this is we model mass and length apart from each other. If both increase or decrease, how do we know if relative length has increased or decreased (i.e. we also want to know what happens to overall body shape, body plan)? And importantly, what implications this has for thermoregulation? We must do more involved modeling, it’s not as simple as understanding whether the ratio increased or decreased
+
+CAUSAL INFERENCE IS NOT MECHANISM
+
+{{< pagebreak >}}
