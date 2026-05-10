@@ -45,9 +45,17 @@ An organism’s morphology is perhaps the most fundamental determinant of how it
 
 There is general support for both Bergmann’s and Allen's rules in endotherms [@teplitskyClimateWarmingBergmanns2014; @rydingShapeshiftingChangingAnimal2021; @meiriValidityBergmannsRule2003], although there are also several important exceptions [@stevensonAllensRuleNorth1986; @geistBergmannsRuleInvalid1987; @cuiFunctionalAdaptationRather2020; @alhajeriGlobalTestAllens2020]. Bergmann's rule is perhaps the most extensively studied macroecological rule to date, and several important reviews cover adherence to [and lack thereof, @ashtonPatternsWithinSpeciesBody2002; @riemerNoGeneralRelationship2018], potential mechanisms of [@yom-tovRecentSpatialTemporal2011], and its implications in the face of climate change [@gardnerDecliningBodySize2011; @teplitskyClimateWarmingBergmanns2014]. Allen's rule is less well studied [but see @rydingShapeshiftingChangingAnimal2021], despite evidence that it is equally important for thermoregulation [@frohlichAllometryRevealsTradeoffs2023].
 
-Importantly, both rules stem from a central tenet: changes in body size or shape alter an organism’s surface-area-to-volume ratio, with direct consequences for thermoregulation. Metabolic scaling theory shows that heat production generally scales with body volume to the 3/4 power, while the area available for heat exchange scales with volume to the 2/3 power (assuming isometric growth, i.e., no change in shape). Thus, as size increases, heat production outpaces heat dissipation, unless the organism alters its shape to become proportionally longer [@kleiber1932body; @kleiber1972body; @glazier2008effects]. The fact that size and shape both serve thermoregulatory functions and that they may act in concert to achieve thermoregulatory goals strongly suggests that they should be analyzed together. Although the following discussion also extends to other environmental gradients that influence homeostasis through organismal surface-area-to-volume ratios [e.g., precipitation @jamesGeographicSizeVariation1970; @jirinecMorphologicalConsequencesClimate2021; @paltrinieriEffectsClimateBat2025], I will focus on thermoregulation for brevity.
+Importantly, both rules stem from a central tenet: changes in body size or shape alter an organism’s surface-area-to-volume ratio, with direct consequences for thermoregulation. Metabolic scaling theory shows that heat production generally scales with body volume to the 3/4 power, while the area available for heat exchange scales with volume to the 2/3 power (assuming isometric growth, i.e., no change in shape). Thus, as size increases, heat production outpaces heat dissipation, unless the organism alters its shape to become proportionally longer [@kleiber1932body; @kleiber1972body; @glazier2008effects]. The fact that size and shape both serve thermoregulatory functions and that they may act in concert to achieve thermoregulatory goals strongly suggests that they should be analyzed together (@fig-sa-to-v). Although the following discussion also extends to other environmental gradients that influence homeostasis through organismal surface-area-to-volume ratios [e.g., precipitation @jamesGeographicSizeVariation1970; @jirinecMorphologicalConsequencesClimate2021; @paltrinieriEffectsClimateBat2025], I will focus on thermoregulation for brevity.
+
+![**Complementarity in Bergmann's and Allen's rules with increasing temperatures.** In response to increasing temperatures, organisms can achieve changes to their surface area to volume ratios by altering their a) body size, b) relative appendage size, c) or through complementarity, i.e. more minute changes to both body and appendage size. In c), morphological responses in body and appendage size are less pronounced than expected if Bergmann's and Allen's rules were operating in isolation. Figures were created by simulating changes to a cartoon bird made up of two spheres (representing the body and head) and a cone (representing the bill). Figure reproduced with permission from Baldwin et al (2023), see article for additional details.](../Figures/Baldwin_fig2.png){#fig-sa-to-v}
 
 # Literature review
+
+I queried the Web of Science to determine how often size (Bergmann's rule) and shape (Allen's rule) are examined a) together versus in isolation, and b) in an integrated fashion versus in parallel. I define an integrated analysis as examining some sort of interaction between size, shape, and temperature, or examining the relationships between temperature and size (i.e. $\beta_{size}$) and temperature and shape (i.e. $\beta_{shape}$). I considered an analysis as conducted in parallel if environment-morphology (size and shape) relationships were never considered in a single model. Part b) was conducted on the subset of studies examining size and shape together.
+
+I limited my search to empirical studies published in the past 5 years (2021-2025) to capture current analytical practices and to assess whether joint analyses have become more common following the publication of influential work highlighting the importance of a joint analytical approach [@baldwinComplementarityAllensBergmanns2023; @frohlichAllometryRevealsTradeoffs2023]. To be included in the review, the study had to examine at least one continuous morphological variable in response to an environmental gradient (or a proxy, e.g., latitude, elevation, year) in an extant species or group of birds or mammals. Only studies focusing on Bergmann's or Allen's rules were considered, which we gauged by the inclusion of the word 'Bergmann\* or Allen\* at least once in the abstract, keywords, introduction, or methods.
+
+The final search was conducted on May 8th, 2026, using the following search terms: (TS=(Allen\* OR Bergmann\* OR "ecogeographic\* rule*" OR "biogeographic* rule" OR "morpholog\* change*") AND TS=(*bird\* OR avian OR aves OR passerine\* OR primate\* OR rodent\* OR carnivore\* OR bat\* OR chiroptera OR "small mammal*" OR mammal* OR endotherm\* OR homeotherm*) AND TS=(temperature OR "thermal adaptation" OR latitud* OR elevation\* OR year\* OR thermoregulat\* OR "climat\* change" OR "global change" OR "climat\* warming" OR "environmental gradient" OR temporal*)) NOT TS=(fossil* OR paleontolog\* OR Cretaceous OR Jurassic OR Miocene OR Pleistocene) AND DT=(ARTICLE OR "EARLY ACCESS") AND WC=(ECOLOGY OR ZOOLOGY OR "EVOLUTIONARY BIOLOGY" OR BIOLOGY OR "VETERINARY SCIENCES" OR "BIODIVERSITY CONSERVATION" OR ORNITHOLOGY OR "ANATOMY MORPHOLOGY" OR PHYSIOLOGY).
 
 ```{r}
 #| label: Setup
@@ -70,12 +78,12 @@ source("Scripts/Key_allometry_fns.R")
 #| label: Load-in-format-data
 
 # Read in and format
-Lr_allens <- read_excel("Lit_review/Methods_ecogeographic_rules_11.15.25.xlsx", 
+Lr_allens <- read_excel("Lit_review/Methods_ecogeographic_rules_5.7.26.xlsx", 
                          sheet = "Allens") %>% 
   clean_names() %>% 
   filter(include_exclude != "Exclude") %>%
   dplyr::select(
-    authors, year, journal, primary_question, class, bergmann, url_or_doi
+    authors, year, journal, primary_question, n_spp, class, bergmann, interaction_size_shape, url_or_doi
     ) %>% 
   mutate(focus = ifelse(bergmann == "Y", "Both", "Allens_only")) %>% 
   dplyr::select(-bergmann)
@@ -86,7 +94,7 @@ Allens_mv <- read_csv("Lit_review/Multivariate.csv")
 Lr_allens2 <- Lr_allens %>% left_join(Allens_mv) %>% 
   mutate(multivariate = ifelse(is.na(multivariate), "No", multivariate))
 
-Lr_bergs <- read_excel("Lit_review/Methods_ecogeographic_rules_11.15.25.xlsx", 
+Lr_bergs <- read_excel("Lit_review/Methods_ecogeographic_rules_5.7.26.xlsx", 
                          sheet = "Bergmanns") %>% 
   clean_names() %>% 
   filter(include_exclude != "Exclude") %>%
@@ -120,8 +128,10 @@ Lr_ecogeo2 <- Lr_ecogeo %>% mutate(doi_clean = extract_doi(url_or_doi))
 # Load in references from Web of science (WOS)
 Wos_refs <- read_excel("Lit_review/Saved_recs_wos.xls") %>%
   clean_names() %>% 
-  rename(journal = source_title) %>%
-  dplyr::select(authors, article_title, journal, publication_year, doi, author_keywords, keywords_plus) %>%
+  rename(journal = source_title,
+         title = article_title, 
+         year_publication = publication_year) %>%
+  dplyr::select(authors, title, journal, year_publication, doi, author_keywords) %>%
   mutate(doi_clean = extract_doi(doi))
 
 # Examine which references were not picked up by the WOS search
@@ -139,40 +149,84 @@ nrow(missing_refs) / nrow(Lr_ecogeo2) # Proportion missing
 ```{r}
 #| label: Subset-lr-dfs
 
-Lr_wos <- Lr_ecogeo2 %>% inner_join(Wos_refs[,c("doi_clean")]) %>% 
+Lr_wos <- Lr_ecogeo2 %>% 
+  inner_join(Wos_refs[,c("doi_clean")]) %>% 
   mutate(wos_search = "Yes")
 Lr_homeostasis <- Lr_ecogeo2 %>% filter(primary_question == "Homeostasis")
 ```
 
 ```{r}
-#| label: Prop-tbls
+#| label: Calc-props-fn
 #| include: false
 
 # Create table for labeling with proportion in each category uh
-Calc_props <- function(df) {
+Calc_props <- function(df, by_var) {
   df %>% 
-  summarize(num_studies = n(), .by = c(focus)) %>% 
+  summarize(num_studies = n(), .by = c({{ by_var }})) %>% 
   mutate(Tot_studies =  sum(num_studies), 
          Prop = num_studies / Tot_studies,
          Per = Prop * 100) %>% 
   mutate(Per = round(Per, 0),
          Prop = round(Prop, 2), 
          Per = paste0(Per, "%"),
-         focus = str_replace(focus, "_", "\n"))
+         {{ by_var }} := str_replace({{ by_var }}, "_", "\n"))
 }
-Prop_all <- Calc_props(Lr_ecogeo)
-Prop_wos <- Calc_props(Lr_wos)
-
-# NOTE the ratios do change if you include only studies that examine organismal homeostasis 
-Calc_props(Lr_homeostasis)
 ```
 
 ```{r}
-#| label: pull-percents
+#| label: Prop-tbls-full-lr
+#| include: false
 
-pull_per <- function(df, focus){
-  df %>% filter(focus == {{ focus }}) %>% 
-  pull(Per)
+Prop_all <- Calc_props(Lr_ecogeo, by_var = focus)
+Prop_wos <- Calc_props(Lr_wos, by_var = focus)
+
+# NOTE the ratios do change if you include only studies that examine organismal homeostasis 
+Calc_props(Lr_homeostasis, by_var = focus)
+```
+
+```{r}
+#| label: interactions-dfs
+#| include: false
+
+# Of species that examined both Bergmann's and Allen's rules.. 
+Lr_both <- Lr_ecogeo %>% 
+  filter(focus == "Both") 
+
+# Of studies that had at least 20 species.. This is important as the likelihood of examining Bergmann's and Allen's rules jointly increases greatly in multi-species studies
+N_spp_cutoff <- 20
+Lr_multi_spp <- Lr_both %>% 
+  filter(n_spp >= N_spp_cutoff)
+
+# Use Calc_props() 
+Prop_both <- Calc_props(Lr_both, by_var = interaction_size_shape)
+Prop_both_ms <- Calc_props(Lr_multi_spp, by_var = interaction_size_shape)
+N_studies_multi_spp <- nrow(Lr_multi_spp)
+```
+
+```{r}
+#| label: hist-num-spp
+#| include: false
+
+# Number of species in studies
+Lr_both %>% filter(n_spp < 2000) %>%
+  mutate(interaction_size_shape = case_when(
+    interaction_size_shape == "N" ~ "Parallel", 
+    interaction_size_shape == "Y" ~ "Integrated"
+  )) %>%
+  ggplot() +
+  geom_histogram(color = "black", aes(x = n_spp, fill = interaction_size_shape)) + 
+  scale_x_log10() + 
+  labs(x = "Number of species", y = "Count", fill = " ") + 
+  scale_fill_grey()
+ggsave("Figures/Integrated_parallel_hist.png", bg = "white")
+```
+
+```{r}
+#| label: pull-per-fns
+
+pull_per <- function(df, filter_by, focus){
+  df %>% filter({{ filter_by }} == {{ focus }}) %>% 
+    pull(Per)
 }
 calc_per_iso <- function(df){
   df %>% filter(focus != "Both") %>% 
@@ -182,11 +236,15 @@ calc_per_iso <- function(df){
         )
       ) %>% pull(Isolated_prop)
 }
+```
+
+```{r}
+#| label: pull-percents-full-lr
 
 # Use custom functions to extract percentages 
-Per_allen <- pull_per(df = Prop_all, focus = "Allens\nonly")
-Per_berg <- pull_per(df = Prop_all, focus = "Bergmanns\nonly")
-Per_both <- pull_per(df = Prop_all, focus = "Both")
+Per_allen <- pull_per(df = Prop_all, filter_by = focus, focus = "Allens\nonly")
+Per_berg <- pull_per(df = Prop_all, filter_by = focus, focus = "Bergmanns\nonly")
+Per_both <- pull_per(df = Prop_all, filter_by = focus, focus = "Both")
 Per_iso <- calc_per_iso(Prop_all)
 Per_iso_wos <- calc_per_iso(Prop_wos)
  
@@ -197,6 +255,18 @@ Per_ral <- paste0(Per_num, "%")
 ```
 
 ```{r}
+#| label: pull-per-interactions-dfs
+#| include: false
+
+Per_interact <- pull_per(Prop_both, filter_by = interaction_size_shape, focus = "Y")
+Per_no_interact <- pull_per(Prop_both, filter_by = interaction_size_shape, focus = "N")
+
+# Multispecies studies (> 10 species)
+Per_interact_ms <- pull_per(Prop_both_ms, filter_by = interaction_size_shape, focus = "Y")
+```
+
+```{r}
+#| label: pull-percents-class
 
 pull_per_class <- function(class){
   Per_class %>% filter(class == {{ class }}) %>% 
@@ -220,20 +290,19 @@ Num_elim <- nrow(Wos_refs) - nrow(Lr_wos)
 Num_additional_refs <- nrow(Lr_ecogeo2) - nrow(Lr_wos)
 ```
 
-I queried the Web of Science for empirical studies published in the past 5 years (2021-2025) to determine how often size (Bergmann's rule) and shape (Allen's rule) are examined together versus in isolation. I focused on this recent window to capture current analytical practices and to assess whether joint analyses have become more common following the publication of influential work highlighting the importance of a joint analytical approach [@baldwinComplementarityAllensBergmanns2023; @frohlichAllometryRevealsTradeoffs2023]. To be included in the review, the study had to examine at least one continuous morphological variable in response to an environmental gradient (or a proxy, e.g., latitude, elevation, year) in an extant species or group of birds or mammals.
-
-The final search was conducted on November 4th, 2025, using the following search terms: (TS=(Allen\* OR Bergmann\* OR "ecogeographic\* rule*" OR "biogeographic* rule" OR "morpholog\* change*") AND TS=(*bird\* OR avian OR aves OR passerine\* OR primate\* OR rodent\* OR carnivore\* OR bat\* OR chiroptera OR "small mammal*" OR mammal* OR endotherm\* OR homeotherm*) AND TS=(temperature OR "thermal adaptation" OR latitud* OR elevation\* OR year\* OR thermoregulat\* OR "climat\* change" OR "global change" OR "climat\* warming" OR "environmental gradient" OR temporal*)) NOT TS=(fossil* OR paleontolog\* OR Cretaceous OR Jurassic OR Miocene OR Pleistocene) AND DT=(ARTICLE OR "EARLY ACCESS") AND WC=(ECOLOGY OR ZOOLOGY OR "EVOLUTIONARY BIOLOGY" OR BIOLOGY OR "VETERINARY SCIENCES" OR "BIODIVERSITY CONSERVATION" OR ORNITHOLOGY OR "ANATOMY MORPHOLOGY" OR PHYSIOLOGY).
-
 The initial query produced `r nrow(Wos_refs)` studies which were manually reviewed to ensure conformity to the inclusion criteria, resulting in the elimination of `r Num_elim` studies. During processing of the remaining `r nrow(Lr_wos)` articles, I found `r Num_additional_refs` additional studies that met the criteria for inclusion but had not been identified by the original query, yielding a final corpus of `r nrow(Lr_ecogeo2)` studies used in the current review. The majority of these studies were conducted in birds (`r Per_birds`), while mammals were examined in `r Per_mammals` of studies, and `r Per_both` examined both taxa (Supporting information).
 
-Of `r nrow(Lr_ecogeo2)` studies examining Bergmann's or Allen's rules, half examined size and shape in isolation (@fig-barplots). Given that results were nearly identical when restricting the analyses to just those identified in the Web of Science search compared to the full set of studies (all studies — `r Per_iso`, just Web of Science — `r Per_iso_wos`), hereafter, I only report results from the larger set of `r nrow(Lr_ecogeo2)` studies. Importantly, authors continue to analyze ecogeographic rules in isolation even after the publication of two seminal papers in 2023 [@frohlichAllometryRevealsTradeoffs2023; @baldwinComplementarityAllensBergmanns2023]. A focus on Bergmann's rule alone (`r Per_berg`) was far more common than on Allen's rule alone (`r Per_allen`, @fig-barplots), likely because Allen's rule studies generally measured *relative* appendage length (`r Per_ral` of studies; Supporting information), i.e. appendage length controlling for body size [@symondsItsAllRelative2025]. Thus, in some respect, studies of Allen's rule were already considering body size across environmental gradients.
+Of `r nrow(Lr_ecogeo2)` studies examining Bergmann's or Allen's rules, `r Per_iso` examined size and shape in isolation (@fig-barplots). Results were identical when restricting the analyses to just those identified in the Web of Science search; hereafter, I only report results from the larger set of `r nrow(Lr_ecogeo2)` studies. Importantly, authors continue to analyze ecogeographic rules in isolation even after the publication of two seminal papers in 2023 [@frohlichAllometryRevealsTradeoffs2023; @baldwinComplementarityAllensBergmanns2023]. A focus on Bergmann's rule alone (`r Per_berg`) was far more common than on Allen's rule alone (`r Per_allen`, @fig-barplots), likely because Allen's rule studies generally measured *relative* appendage length (`r Per_ral` of studies; Supporting information), i.e. appendage length controlling for body size [@symondsItsAllRelative2025]. Thus, in some respect, studies of Allen's rule were already considering body size across environmental gradients.
+
+Importantly, of the `r nrow(Lr_both)` studies that analyzed both Allen's and Bergmann's rules, only `r Per_interact` examined the rules in an integrated fashion. The other `r Per_no_interact` examined the two rules in parallel. The number of focal species in the study influenced how often authors conducted integrated versus in parallel analyses. All studies with under 20 focal species conducted analyses in parallel, whereas half of the studies with at least 20 focal species conducted integrated analyses (CITE FIGURE). It is important to note some types of integrated analyses are achievable with any number of focal species (e.g., interaction models such as in CITE FIGURE) while others are not [e.g., metaregression, as in @paltrinieriEffectsClimateBat2025; @baldwinComplementarityAllensBergmanns2023].
 
 ```{r}
 #| label: export-csv 
 #| include: false
 
 # Format and export csv with codings of studies
-Lr_export <- Lr_ecogeo2 %>% anti_join(Lr_wos) %>% 
+Lr_export <- Lr_ecogeo2 %>% 
+  anti_join(Lr_wos) %>% 
   mutate(wos_search = "No") %>%
   bind_rows(Lr_wos) %>% 
   dplyr::select(-url_or_doi) %>% 
@@ -247,12 +316,21 @@ Lr_export <- Lr_ecogeo2 %>% anti_join(Lr_wos) %>%
   dplyr::select(-primary_question) 
 
 # Maintain accents using readr::write_excel_csv
-#Lr_export %>% write_excel_csv("Nature_communications/Lit_review_berg_allen.csv")
+#Lr_export %>% write_excel_csv("Journal_submissions/Lit_review_berg_allen.csv")
+
+## Export refernces from Web of Science 
+if(FALSE){
+  Wos_refs %>% 
+  dplyr::select(-doi) %>%
+  mutate(Comments = ifelse(
+    str_detect(authors, "Gyurácz"), "No DOI, Article No.: e231602", NA)
+    ) %>% write_excel_csv("Journal_submissions/Wos_literature_search.csv", na = " ")
+}
 ```
 
 ```{r}
 #| label: fig-barplots
-#| fig-cap: The frequency with which Allen’s and Bergmann’s rules were analyzed in isolation vs jointly. a) Across all studies (n = 86), the two rules were analyzed in isolation half of the time. b) Logistic regression showed no increase in the frequency with which Allen’s and Bergmann’s rules were anlyzed jointly before (n = 49) vs after 2023 (n = 37). The end of 2023 was chosen due to the publication lag after seminal papers by Fröhlich et al and Baldwin et al. were published in February and July of 2023, respectively. Thus, 'Before' includes the studies published in 2023. 
+#| fig-cap: The frequency with which Allen’s and Bergmann’s rules were analyzed in isolation vs jointly. a) Across all studies (n = 87), the two rules were analyzed in isolation more than half of the time. b) Logistic regression showed no increase in the frequency with which Allen’s and Bergmann’s rules were anlyzed jointly before (n = 49) vs after 2023 (n = 38). The end of 2023 was chosen due to the publication lag after seminal papers by Fröhlich et al and Baldwin et al. were published in February and July of 2023, respectively. Thus, 'Before' includes the studies published in 2023. 
 #| fig-width: 6.37
 
 # Format
@@ -318,55 +396,52 @@ ggplot(Lr_props, aes(x = before_after, y = Per, fill = focus_label)) +
     strip.text = element_blank(),
     legend.position = "top"
   )
+#ggsave("Figures/Allen_berg_both_barplot.png", bg = "white")
 ```
 
 # The need for a combined approach
 
-Only half of studies published in the last five years examined Bergmann’s and Allen’s rules together, and even among these, most simply tested them in parallel rather than in an integrated framework. It is therefore important to consider what is lost when size and shape are studied as separate phenomenon and the possibilities of dynamic interplay are ignored. I argue that size, shape and temperature gradients interact in at least three distinct ways to meet thermoregulatory demands.
-
-## Trade-offs: functional constraints on thermoregulatory evolution
-
-Past work has found that species responded to warming either by decreasing body size or by increasing appendage length, but rarely both [@frohlichAllometryRevealsTradeoffs2023; @dubinerWidespreadRecentChanges2022]. This pattern supports the ‘trade-off hypothesis,’ which posits that different thermoregulatory strategies carry distinct ecological costs [@frohlichAllometryRevealsTradeoffs2023]. For instance, smaller body sizes can reduce competitive ability [@shipleySelectionCounteractsDevelopmental2022] or foraging efficiency [@vangilsBodyShrinkageDue2016], and changes to appendage size or shape can alter vocal signaling [@friedmanEvolutionMultifunctionalTrait2019; @sebastianelliContinentwidePatternsSong2022]. Such costs make certain strategies more or less viable depending on a species’ life history. For example, bird bills appear to be functionally constrained in taxa with unique foraging ecologies (e.g., Trochilidae and Rallidae), and thus these taxa relied heavily on changes in body size to meet thermoregulatory needs [@baldwinComplementarityAllensBergmanns2023].
-
-## Complementarity: coordinated shifts in size and shape
-
-Complementarity occurs when coordinated shifts in both body size and appendage length produce similar changes in surface area–to–volume ratios compared to larger shifts in either trait alone. In a recent study by @baldwinComplementarityAllensBergmanns2023, “complementarity” was strongly supported as 81% of the 107 bird families examined failed to demonstrate sufficient shifts in either size or shape to confirm tests of Bergmann’s or Allen’s rules when analyzed separately (@fig-sa-to-v). No family conformed to both rules simultaneously. Instead, most families exhibited modest but coordinated changes in size and shape in the directions predicted by both rules [also see @dubinerWidespreadRecentChanges2022]. Such adjustments may buffer against the fitness costs of extreme changes in a single trait while still permitting meaningful shifts to thermoregulatory capacity.
-
-![**Complementarity in Bergmann's and Allen's rules with increasing temperatures.** In response to increasing temperatures, organisms can achieve changes to their surface area to volume ratios by altering their a) body size, b) relative appendage size, c) or through complementarity, i.e. more minute changes to both body and appendage size. In c), morphological responses in body and appendage size are less pronounced than expected if Bergmann's and Allen's rules were operating in isolation. Figures were created by simulating changes to a cartoon bird made up of two spheres (representing the body and head) and a cone (representing the bill). Figure reproduced with permission from Baldwin et al (2023), see article for additional details.](../Figures/Baldwin_fig2.png){#fig-sa-to-v}
+Only half of studies published in the last five years examined Bergmann’s and Allen’s rules together, and even among these, most simply tested them in parallel rather than in an integrated framework. It is therefore important to consider what is lost when size and shape are studied as separate phenomenon and the possibilities of dynamic interplay are ignored. I argue that size, shape and temperature gradients regularly interact with each other, and thus require an integrated analytical framework to make robust inference. I discuss interactions broadly and then focus on two types of interactions highlighted in recent global analyses: trade-offs and complementarity [@baldwinComplementarityAllensBergmanns2023; @frohlichAllometryRevealsTradeoffs2023].
 
 ## Interactions: size, shape, and temperature
 
-The joint examination of Bergmann's and Allen's rules can allow for a more nuanced interpretation of morphology-environment relationships, particularly by testing interactions between size, shape, and temperature. For example, recent work shows that smaller species tend to exhibit stronger morphological responses to warming than larger species [@mcqueenShorebirdsAreShrinking2024; @neate-cleggAfromontaneUnderstoryBirds2024; @paltrinieriEffectsClimateBat2025], likely due to greater evolutionary potential through larger effective population sizes, higher genetic variance, and faster molecular evolution [@orkneySmallBodySize2024; @zimovaBodySizePredicts2023]. Similarly, @frohlichAllometryRevealsTradeoffs2023 found that including interactions between size and shape often reversed apparent temperature–morphology relationships. For example, despite overall conformity to Bergmann’s rule, inverse patterns (i.e., smaller body size at colder temperatures) emerged in birds with particularly short bills and long legs. Likewise, while Allen’s rule predicts longer appendages in warmer regions, this pattern only held for large-bodied species; small-bodied species showed the opposite trend (@fig-interactions). Without modeling these interactions, conclusions would have been misleading, underscoring the importance of incorporating trait codependence when testing ecogeographical rules [@gastonEcogeographicalRulesElements2008].
+The joint examination of Bergmann's and Allen's rules allows for a more nuanced interpretation of morphology-environment relationships, particularly by testing interactions between size, shape, and temperature. For example, recent work shows that smaller species tend to exhibit stronger morphological responses to warming than larger species [@mcqueenShorebirdsAreShrinking2024; @neate-cleggAfromontaneUnderstoryBirds2024; @paltrinieriEffectsClimateBat2025], likely due to greater evolutionary potential through larger effective population sizes, higher genetic variance, and faster molecular evolution [@orkneySmallBodySize2024; @zimovaBodySizePredicts2023]. Similarly, @frohlichAllometryRevealsTradeoffs2023 found that including interactions between size and shape often reversed apparent temperature–morphology relationships. For example, despite overall conformity to Bergmann’s rule, inverse patterns (i.e., smaller body size at colder temperatures) emerged in birds with particularly short bills and long legs. Likewise, while Allen’s rule predicts longer appendages in warmer regions, this pattern only held for large-bodied species; small-bodied species showed the opposite trend (@fig-interactions). Without modeling these interactions, conclusions would have been misleading, underscoring the importance of incorporating trait codependence when testing ecogeographical rules [@gastonEcogeographicalRulesElements2008].
 
-![**Modeling interactions between size and shape is critical in understanding tradeoffs in organismal response to increasing temperatures**. In predicting a species' experienced temperature envelope, Fröhlich et al (2023) found that the environment-morphology relationship of mass (top left), beak (top right), and tarsus (bottom) was dependent on the size and shape of the organism. All relationships were highly significant at p \< 0.001. See Figure 4 in Fröhlich et al (2023) for additional infromation; figure was modified and reproduced with permission from Arkadiusz Fröhlich.](../Figures/Frohlich_fig4F_modified.pdf){#fig-interactions}
+![Modeling interactions between size and shape is critical in understanding tradeoffs in organismal response to increasing temperatures. In predicting a species' experienced temperature envelope, Fröhlich et al (2023) found that the environment-morphology relationship of mass (top left), beak (top right), and tarsus (bottom) was dependent on the size and shape of the organism. All relationships were highly significant at p \< 0.001. See Figure 4 in Fröhlich et al (2023) for additional infromation; figure was modified and reproduced with permission from Arkadiusz Fröhlich.](../Figures/Frohlich_fig4F_modified.pdf){#fig-interactions}
+
+### Trade-offs: functional constraints on thermoregulatory evolution
+
+Past work has found that species responded to warming either by decreasing body size or by increasing appendage length, but rarely both [@frohlichAllometryRevealsTradeoffs2023; @dubinerWidespreadRecentChanges2022]. This pattern supports the ‘trade-off hypothesis,’ which posits that different thermoregulatory strategies carry distinct ecological costs [@frohlichAllometryRevealsTradeoffs2023]. For instance, smaller body sizes can reduce competitive ability [@shipleySelectionCounteractsDevelopmental2022] or foraging efficiency [@vangilsBodyShrinkageDue2016], and changes to appendage size or shape can alter vocal signaling [@friedmanEvolutionMultifunctionalTrait2019; @sebastianelliContinentwidePatternsSong2022]. Such costs make certain strategies more or less viable depending on a species’ life history. For example, bird bills appear to be functionally constrained in taxa with unique foraging ecologies (e.g., Trochilidae and Rallidae), and thus these taxa relied heavily on changes in body size to meet thermoregulatory needs [@baldwinComplementarityAllensBergmanns2023]. Importantly, this is an interaction, where a strong life-history constraint limits the response path on either size or shape (i.e., temperature × 'life-history constraint' interaction; CITE NEW CONCEPTUAL FIGURE).
+
+### Complementarity: coordinated shifts in size and shape
+
+Complementarity occurs when coordinated shifts in both body size and appendage length produce similar changes in surface area–to–volume ratios compared to larger shifts in either trait alone. In a recent study by @baldwinComplementarityAllensBergmanns2023, “complementarity” was strongly supported as 81% of the 107 bird families examined failed to demonstrate sufficient shifts in either size or shape to confirm tests of Bergmann’s or Allen’s rules when analyzed separately (@fig-sa-to-v). No family conformed to both rules simultaneously. Instead, most families exhibited modest but coordinated changes in size and shape in the directions predicted by both rules [also see @dubinerWidespreadRecentChanges2022]. Such adjustments may buffer against the fitness costs of extreme changes in a single trait while still permitting meaningful shifts to thermoregulatory capacity. Again, complementarity can be considered an interaction. Here, constraints act on both size and appendages such that neither trait can shift far on its own, but a more tempered response emerges from each trait (i.e., temperature × 'strength of constraint' interaction).
 
 ## The Thermo-Morpho Rule
 
-In short, analyzing either rule in isolation precludes the possibility of testing for relationships *between* size and shape. Indeed, these codependencies are likely the norm in nature and not the exception to the rule, as adaptative responses in size and shape need not operate independently to generate adaptive thermal responses. The overly simplistic thinking implicit in testing for either rule in isolation risks missing or even mischaracterizing the processes that underpin thermoregulation in most species.
+These examples show that trade-offs and complementarity are variations on a single theme – temperature's impact on morphology is nearly always moderated by other biological constraints. The strength of these life-history constraints on size and shape determine the 'wiggle room' available for adaptation within each trait. Recognizing this shared structure highlights that interactions are the key to understanding morphological trends along temperature gradients. Thus, analyzing either rule in isolation precludes the possibility of testing for relationships *between* size and shape, despite that these codependencies are likely the norm in nature and not the exception to the rule. The overly simplistic thinking implicit in testing for either rule in isolation risks missing or even mischaracterizing the processes that underpin thermoregulation in most species.
 
-The continued isolated treatment of Bergmann's and Allen's rules highlights the need for a framework shift. Here, I propose the Thermo-Morpho Rule, which views size and shape as complementary axes of thermoregulatory adaptation, providing theoretical justification for analyzing Bergmann’s and Allen’s rules in tandem. Under this framework, adherence occurs when species follow Bergmann’s or Allen's rule (i.e., trade-offs), or exhibit coordinated changes in body size and appendage length that together alter the surface area–to–volume ratio (i.e., complementarity). These represent distinct pathways to maintaining thermoregulatory balance, and highlight that evolution may act on both traits jointly depending on functional and environmental constraints [@frohlichAllometryRevealsTradeoffs2023; @baldwinComplementarityAllensBergmanns2023].
-
-Although trade-offs, complementarity, and interactions are presented as distinct processes, they can be understood as variations on a single theme - temperature rarely acts on morphology in isolation. Instead, its effects are nearly always moderated by other biological constraints. In the trade-off examples, life-history limits the evolution of one thermoregulatory pathway, meaning that temperature × 'life-history constraint' interactions shape the observed response (e.g., functional limits on bills force temperature-driven change to occur through body size). Similarly under complementarity, constraints act on both size and appendages such that neither trait can shift far on its own, but a more tempered response emerges from temperature × 'strength of constraint' interactions on each trait. The third category - interactions between temperature, size, and shape - is simply the most explicit and readily testable expression of this same logic. All three processes reflect moderation, where the effect of temperature on one trait depends on another trait or constraint. Recognizing this shared structure highlights that interactions are the key to understanding morphological trends along temperature gradients, and that even joint analyses of Bergmann's and Allen's rules may be insufficient.
+The continued isolated treatment of Bergmann's and Allen's rules highlights the need for a framework shift. Here, I propose the Thermo-Morpho Rule, which views size and shape as complementary axes of thermoregulatory adaptation, providing theoretical justification for analyzing Bergmann’s and Allen’s rules in tandem. Under this framework, adherence occurs whenever shape and size interact in a way that increases surface area to volume ratios in warmer climates. This could be by following either Bergmann’s or Allen's rule (i.e., trade-offs), or exhibiting coordinated changes in body size and appendage length that together alter the surface area–to–volume ratio (i.e., complementarity).
 
 # Beyond morphology: Toward an integrative thermoregulatory framework
 
-Indeed, thermoregulation extends beyond morphology, as organisms respond to hotter climates through shifts in geographic distributions, physiology, behavior, or phenology. For instance, many species move upslope or poleward, advance breeding or migration timing, shift activity to cooler periods of the day, or adjust metabolic heat production [@millienEcotypicVariationContext2006; @mayrGeographicalCharacterGradients1956; @seebacherResponsesTemperatureVariation2009]. Ecogeographical rules beyond Bergmann’s and Allen’s also highlight alternative thermoregulatory pathways [@tianPredictingBioticResponses2020]. For example, Bogert’s rule (the “thermal melanism hypothesis”) proposes that darker pigmentation improves heat absorption in cool environments [@bogertThermoregulationReptilesFactor1949; @clusella-trullasTestingThermalMelanism2008], while Hesse's rule predicts that relative organ size will decrease if metabolic rates decline with warming temperatures [@mullerRelativeHeartSize2014; @seebacherResponsesTemperatureVariation2009]. Importantly, the same three processes - trade-offs, complementarity, and interactions - likely govern these thermoregulatory axes as well.
+Thermoregulation extends beyond morphology, as organisms respond to hotter climates through shifts in geographic distributions, physiology, behavior, or phenology. For instance, many species move upslope or poleward, advance breeding or migration timing, shift activity to cooler periods of the day, or adjust metabolic heat production [@millienEcotypicVariationContext2006; @mayrGeographicalCharacterGradients1956; @seebacherResponsesTemperatureVariation2009]. Ecogeographical rules beyond Bergmann’s and Allen’s also highlight alternative thermoregulatory pathways [@tianPredictingBioticResponses2020]. For example, Bogert’s rule (the “thermal melanism hypothesis”) proposes that darker pigmentation improves heat absorption in cool environments [@bogertThermoregulationReptilesFactor1949; @clusella-trullasTestingThermalMelanism2008], while Hesse's rule predicts that relative organ size will decrease if metabolic rates decline with warming temperatures [@mullerRelativeHeartSize2014; @seebacherResponsesTemperatureVariation2009]. Importantly, there has been work combining several of these rules [@macedoMacroevolutionBodyExtremities2025; @cardiliniTestsEcogeographicalRelationships2016; @cuiFunctionalAdaptationRather2020], but they have not incorporated the interactions between rules [but see @malpicaColorMorphologicalDifferentiation2022].
 
-As mentioned previously, trade-offs arise when an organism’s life history constrains the evolution of certain thermoregulatory traits, forcing reliance on alternative mechanisms to maintain homeostasis. For example, koalas (*Phascolarctos cinereus*) exhibit limited evolutionary scope for body-size change because arboreal foraging favors small, lightweight bodies, but they compensate through geographic variation in pelage insulation that closely tracks temperature [@briscoeBergmannMeetsScholander2015]. Similarly, woodrats (Neotoma) lack key physiological adaptations for heat dissipation (e.g., efficient evaporative cooling), but show strong temperature–body size relationships suggesting that morphological adjustment substitutes for physiological adaptation [@brownBergmannsRuleClimatic1969; @smithPredictingWoodratNeotoma2006; @khaliqGlobalVariationThermal2014].
+Similar to morphological rules (e.g., Bergmann's and Allen's), these alternative thermoregulatory pathways are likely dominated by interactions as well, such that one adaptive trait modifies how another trait responds to environmental temperature. For instance, in shorebirds, morphology influences behavioral thermoregulation: individuals with longer bills and legs more frequently exposed these appendages to facilitate dry heat transfer, while shorter-limbed species relied less on such behaviors [@pavlovicMorphologyGeographyPredict2019; @ryelandBillSizeMediates2017; @ryelandLegLengthTemperature2019; @playa-montmanyBehaviouralPhysiologicalResponses2023]. Similarly, migratory behavior interacts with temperature to shape body size clines – migratory species often show inconsistent responses to temperature, whereas resident species more reliably conform to Bergmann’s and Allen’s rules [@mainwaringConformityBergmannsRule2021; @mcqueenShorebirdsAreShrinking2024]. Other behaviors like torpor, (micro-) habitat selection, and nocturnality are important to consider as they can also influence the thermal environment experienced by wildlife [@brivioSeekingTemporalRefugia2024; @jirinecLightThermalNiches2022; @bonebrakeClimateChangeThermoregulatory2020]. Indeed, behavioural flexibility dampens the need for phenotypic responses [@baldwinPhenotypicResponsesClimate2022].
+
+As with the morphological rules, alternative thermoregulatory pathways are subject to trade-offs as well. In this context, trade-offs are when a given thermoregulatory pathway is highly constrained, leading to reliance on alternative mechanisms of thermoregulation. For example, koalas (*Phascolarctos cinereus*) exhibit limited evolutionary scope for body-size change because arboreal foraging favors small, lightweight bodies, but they compensate through geographic variation in pelage insulation that closely tracks temperature [@briscoeBergmannMeetsScholander2015]. Similarly, woodrats (Neotoma) lack key physiological adaptations for heat dissipation (e.g., efficient evaporative cooling), but show strong temperature–body size relationships suggesting that morphological adjustment substitutes for physiological adaptation [@brownBergmannsRuleClimatic1969; @smithPredictingWoodratNeotoma2006; @khaliqGlobalVariationThermal2014].
 
 Complementarity occurs when multiple traits act together to maintain thermal balance. For example, @he2023global showed that mammals and birds that hibernate or migrate to avoid the coldest temperatures still adhered to Bergmann's rule, but less strongly than their counterparts who felt the full brunt of winter. Similarly, @mollerMorphologicalConstraintsChanging2017 showed that birds with high aspect ratios adjusted migration phenology less than those with lower aspect ratios. Higher aspect ratios may increase surface area relative to body mass, facilitating convective heat exchange [@rubalcabaPhysicalConstraintsThermoregulation2022], thereby reducing selective pressure for behavioral adjustments to migration timing. Both of these examples illustrate that morphology and other behavioural mechanisms can combine to produce meaningful changes to thermoregulatory capacity.
 
-Finally, interactions occur when one adaptive trait modifies how another responds to environmental temperature. For instance, in shorebirds, morphology influences behavioral thermoregulation: individuals with longer bills and legs more frequently exposed these appendages to facilitate dry heat transfer, while shorter-limbed species relied less on such behaviors [@pavlovicMorphologyGeographyPredict2019; @ryelandBillSizeMediates2017; @ryelandLegLengthTemperature2019; @playa-montmanyBehaviouralPhysiologicalResponses2023]. Similarly, migratory behavior interacts with temperature to shape body size clines – migratory species often show inconsistent responses to temperature, whereas resident species more reliably conform to Bergmann’s and Allen’s rules [@mainwaringConformityBergmannsRule2021; @mcqueenShorebirdsAreShrinking2024]. Other behaviors like torpor, habitat selection and structure, and nocturnality are important to consider as they can also influence the thermal environment experienced by wildlife [@brivioSeekingTemporalRefugia2024; @jirinecLightThermalNiches2022; @bonebrakeClimateChangeThermoregulatory2020]. Together, such examples reveal that adherence to ecogeographical rules is conditional rather than universal, moderated by behavioral and morphological contexts that jointly determine adaptive thermoregulatory strategies.
-
-These studies suggest that any trait under thermoregulatory selection could modify, act in concert with, or substitute for morphological adaptation [@clarkeScalingBasalMetabolic2010; @tianPredictingBioticResponses2020; @khaliqGlobalVariationThermal2014]. A natural next step is to formalize a broader *Thermo-Adaptive Framework*, encompassing how thermal gradients jointly shape morphology, physiology, coloration, and behavior. The Thermo-Adaptive Framework is best viewed as a conceptual scaffold linking thermoregulatory function across traits. I do not frame it as an explicit rule with predictions to test (although this is feasible); instead its purpose is to raise awareness of trade-offs, complementarity, and interactions amongst adaptive thermoregulatory traits. Such a framework will require data that are not yet routinely collected, but, as with morphological databases [@tobiasAVONETMorphologicalEcological2022], comparable datasets on physiological, behavioural, and color traits are rapidly emerging (e.g., [Project Plumage](https://www.nhm.ac.uk/take-part/monitor-and-encourage-nature/project-archive/project-plumage.html)). By integrating across these axes, we can move toward a more complete understanding of how organisms meet the thermoregulatory challenges of a warming world [@guoApplyingBergmannsRule2025].
+These studies suggest that any trait under thermoregulatory selection could modify, act in concert with, or substitute for morphological adaptation [@clarkeScalingBasalMetabolic2010; @tianPredictingBioticResponses2020; @khaliqGlobalVariationThermal2014]. A natural next step is to formalize a broader *Thermo-Adaptive Framework*, encompassing how thermal gradients jointly shape morphology, physiology, coloration, and behavior (CITE BENHAM). The Thermo-Adaptive Framework is best viewed as a conceptual scaffold linking thermoregulatory function across traits. I do not frame it as an explicit rule with predictions to test (although this is feasible); instead its purpose is to raise awareness of trade-offs, complementarity, and interactions amongst adaptive thermoregulatory traits. Such a framework will require data that are not yet routinely collected, but, as with morphological databases [@tobiasAVONETMorphologicalEcological2022], comparable datasets on physiological, behavioural, and color traits are rapidly emerging (e.g., [Project Plumage](https://www.nhm.ac.uk/take-part/monitor-and-encourage-nature/project-archive/project-plumage.html)). By integrating across these axes, we can move toward a more complete understanding of how organisms meet the thermoregulatory challenges of a warming world [@guoApplyingBergmannsRule2025].
 
 # Conclusions
 
-Substantial resources go into collecting and analyzing phenotypic data to test ecogeographical rules. Yet nearly half of the studies published in the last five years examined Bergmann’s and Allen’s rules in isolation, limiting our understanding of how size and shape co-vary across environments. In the Anthropocene, where conservationists must make fast and informed decisions, the continued compartmentalization of trait variation into separate “rules” is increasingly unhelpful [@goldenbergLinkBodySize2022]. Analyzing multiple traits simultaneously within an integrated framework provides greater inferential power and a more realistic picture of how entire phenotypes respond to temperature and other environmental gradients. These insights matter at both intra- and inter- specific scales: intraspecific analyses can forecast how species will respond to rising temperatures within their ranges and identify vulnerable populations, whereas interspecific analyses can reveal how entire clades respond and highlight groups of organisms particularly susceptible to warming. Ultimately, identifying the pathways - whether morphological, physiological, behavioral, or chromatic - through which selection acts will enable conservationists to better anticipate biological responses in an increasingly warm and human-dominated world.
+Substantial resources go into collecting and analyzing phenotypic data to test ecogeographical rules. Yet more than half of the studies published in the last five years examined Bergmann’s and Allen’s rules in isolation, limiting our understanding of how size and shape co-vary across environments. In the Anthropocene, where conservationists must make fast and informed decisions, the continued compartmentalization of trait variation into separate “rules” is increasingly unhelpful [@goldenbergLinkBodySize2022]. Analyzing multiple traits simultaneously within an integrated framework provides greater inferential power and a more realistic picture of how phenotypes respond to temperature and other environmental gradients. Indeed, interactions are important in understanding thermoregulation [@lustickInteractionPostureColor1980] and ecogeographical rules more broadly [@gastonEcogeographicalRulesElements2008; @marcondesRethinkingGlogersRule2021; @delheyReconcilingEcogeographicalRules2019]. These insights matter at both intra- and inter- specific scales: intraspecific analyses can forecast how species will respond to rising temperatures within their ranges and identify vulnerable populations, whereas interspecific analyses can reveal how entire clades respond and highlight groups of organisms particularly susceptible to warming. Ultimately, identifying the pathways - whether morphological, physiological, behavioral, or chromatic - through which selection acts will enable conservationists to better anticipate biological responses in an increasingly warm and human-dominated world (CITE BENHAM).
 
 # Data availability
 
-My coding of the `r nrow(Lr_ecogeo2)` studies is available for download in the supporting information. The full set of articles can be examined by reproducing the [Web of Science search](https://www.webofscience.com/wos/woscc/summary/40d1b80b-14b6-4199-83f2-aeeec658ec5f-01868a83d5/relevance/1).
+My coding of the `r nrow(Lr_ecogeo2)` studies is available for download in the supporting information. The full set of articles can be examined by reproducing the [Web of Science search](https://www.webofscience.com/wos/woscc/summary/18a52e80-d3ee-43e9-82c1-c06ead97d607-018688554c/relevance/1).
 
 {{< pagebreak >}}
 
