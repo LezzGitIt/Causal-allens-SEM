@@ -68,6 +68,8 @@ library(smatr)
 library(ggpubr)
 library(cowplot)
 library(broom)
+library(dagitty)
+library(ggdag)
 ggplot2::theme_set(theme_cowplot())
 
 # Source functions
@@ -294,7 +296,7 @@ The initial query produced `r nrow(Wos_refs)` studies which were manually review
 
 Of `r nrow(Lr_ecogeo2)` studies examining Bergmann's or Allen's rules, `r Per_iso` examined size and shape in isolation (@fig-barplots). Results were identical when restricting the analyses to just those identified in the Web of Science search; hereafter, I only report results from the larger set of `r nrow(Lr_ecogeo2)` studies. Importantly, authors continue to analyze ecogeographic rules in isolation even after the publication of two seminal papers in 2023 [@frohlichAllometryRevealsTradeoffs2023; @baldwinComplementarityAllensBergmanns2023]. A focus on Bergmann's rule alone (`r Per_berg`) was far more common than on Allen's rule alone (`r Per_allen`, @fig-barplots), likely because Allen's rule studies generally measured *relative* appendage length (`r Per_ral` of studies; Supporting information), i.e. appendage length controlling for body size [@symondsItsAllRelative2025]. Thus, in some respect, studies of Allen's rule were already considering body size across environmental gradients.
 
-Importantly, of the `r nrow(Lr_both)` studies that analyzed both Allen's and Bergmann's rules, only `r Per_interact` examined the rules in an integrated fashion. The other `r Per_no_interact` examined the two rules in parallel. The number of focal species in the study influenced how often authors conducted integrated versus in parallel analyses. All studies with under 20 focal species conducted analyses in parallel, whereas half of the studies with at least 20 focal species conducted integrated analyses (CITE FIGURE). It is important to note some types of integrated analyses are achievable with any number of focal species (e.g., interaction models such as in CITE FIGURE) while others are not [e.g., metaregression, as in @paltrinieriEffectsClimateBat2025; @baldwinComplementarityAllensBergmanns2023].
+Importantly, of the `r nrow(Lr_both)` studies that analyzed both Allen's and Bergmann's rules, only `r Per_interact` examined the rules in an integrated fashion; the other `r Per_no_interact` examined the two rules in parallel. The number of focal species in the study influenced how often authors conducted integrated versus in parallel analyses. All studies with under 20 focal species conducted analyses in parallel, whereas half of the studies with at least 20 focal species conducted integrated analyses (@fig-barplots). It is important to note some types of integrated analyses are achievable with any number of focal species (e.g., interaction models such as in CITE FIGURE), while others are not [e.g., metaregression, as in @paltrinieriEffectsClimateBat2025; @baldwinComplementarityAllensBergmanns2023].
 
 ```{r}
 #| label: export-csv 
@@ -329,14 +331,14 @@ if(FALSE){
 ```
 
 ```{r}
-#| label: fig-barplots
-#| fig-cap: The frequency with which Allen’s and Bergmann’s rules were analyzed in isolation vs jointly. a) Across all studies (n = 87), the two rules were analyzed in isolation more than half of the time. b) Logistic regression showed no increase in the frequency with which Allen’s and Bergmann’s rules were anlyzed jointly before (n = 49) vs after 2023 (n = 38). The end of 2023 was chosen due to the publication lag after seminal papers by Fröhlich et al and Baldwin et al. were published in February and July of 2023, respectively. Thus, 'Before' includes the studies published in 2023. 
-#| fig-width: 6.37
+#| label: barplots-figure
+#| include: false
 
 # Format
 Lr_glm <- Lr_ecogeo2 %>% 
   mutate(focus_label = str_remove(focus, "_only"),
-         focus_bin = if_else(focus == "Both", 1, 0),
+         focus_label = ifelse(focus_label == "Both", "Joint", focus_label),
+         focus_bin = ifelse(focus == "Both", 1, 0),
          before_after = ifelse(year > 2023, "After", "Before"))
 
 # Generate the proportion of each focus type ('Both', 'Allens', 'Bergs')
@@ -378,7 +380,8 @@ labels_df <- tibble(
 )
 
 # Plot
-ggplot(Lr_props, aes(x = before_after, y = Per, fill = focus_label)) +
+Lr_props %>% 
+  ggplot(aes(x = before_after, y = Per, fill = focus_label)) +
   geom_col(color = "black") +
   geom_text(aes(label = round(Per, 2)),
             position = position_stack(vjust = 0.5), size = 4) +
@@ -388,7 +391,7 @@ ggplot(Lr_props, aes(x = before_after, y = Per, fill = focus_label)) +
             inherit.aes = FALSE, hjust = 0) +
   scale_size_identity() +
   scale_fill_manual(
-    values = c("Allens"="white","Bergmanns"="gray70","Both"="gray30")
+    values = c("Allens"="white","Bergmanns"="gray70","Joint"="gray30")
     ) +
   labs(x=NULL, y="Proportion", fill=NULL) +
     theme(
@@ -399,9 +402,78 @@ ggplot(Lr_props, aes(x = before_after, y = Per, fill = focus_label)) +
 #ggsave("Figures/Allen_berg_both_barplot.png", bg = "white")
 ```
 
+![The frequency with which Allen’s and Bergmann’s rules were analyzed in isolation vs jointly. a) Across all studies (n = 87), the two rules were analyzed jointly less than half of the time (47%). The inset histogram shows that, of the joint analyses, the majority of them tested the two rules in parallel instead of in an integrated fashion, although the number of focal species moderated this relationship. Not pictured are the Fröhlich et al and Baldwin et al. studies, which both conducted integrated analyses and included 9,962 and 6,974 species, respectively. b) Logistic regression showed no increase in the frequency with which Allen’s and Bergmann’s rules were anlyzed jointly before (n = 49) vs after 2023 (n = 38). The end of 2023 was chosen due to the publication lag after seminal papers by Fröhlich et al and Baldwin et al. were published in February and July of 2023, respectively. Thus, 'Before' includes the studies published in 2023.](../Figures/Barplot/Barplot_allen_berg_both.pdf){#fig-barplots}
+
 # The need for a combined approach
 
-Only half of studies published in the last five years examined Bergmann’s and Allen’s rules together, and even among these, most simply tested them in parallel rather than in an integrated framework. It is therefore important to consider what is lost when size and shape are studied as separate phenomenon and the possibilities of dynamic interplay are ignored. I argue that size, shape and temperature gradients regularly interact with each other, and thus require an integrated analytical framework to make robust inference. I discuss interactions broadly and then focus on two types of interactions highlighted in recent global analyses: trade-offs and complementarity [@baldwinComplementarityAllensBergmanns2023; @frohlichAllometryRevealsTradeoffs2023].
+Fewer than half of the studies published in the last five years examined Bergmann’s and Allen’s rules together, and even among these, the vast majority tested them in parallel rather than in an integrated framework. It is therefore important to consider what is lost when size and shape are studied as separate phenomenon and the possibilities of dynamic interplay are ignored. I argue that size, shape and temperature gradients regularly interact with each other, and thus require an integrated analytical framework to make robust inference. I discuss interactions broadly and then focus on two types of interactions highlighted in recent global analyses: trade-offs and complementarity [@baldwinComplementarityAllensBergmanns2023; @frohlichAllometryRevealsTradeoffs2023].
+
+```{r}
+#| label: idag
+
+## Shape as response
+dag_shape <- dagify(
+  size ~ temperature, 
+  sizeXtemperature ~ size + temperature,
+  shape ~ temperature + size + sizeXtemperature, 
+  exposure = c("sizeXtemperature"), 
+  outcome = "shape"
+  #latent = c() 
+  )
+
+tidy_dagitty(dag_shape, layout = "fr") %>% 
+  ggdag_status(text_col = "black",
+               text = TRUE, 
+               edge_type = "link_arc",
+               node_size = 20,
+               text_size = 3, 
+               stylized = TRUE) + 
+  theme_dag() + 
+  guides(fill = "none", color = "none") +
+  scale_fill_grey()
+
+## Shape as response
+dag_size_size <- dagify(
+  size ~ temperature, 
+  D_size_temperature ~ size, 
+  exposure = c("size"), 
+  outcome = "D_size_temperature"
+  #latent = c() 
+  )
+
+tidy_dagitty(dag_size_size, layout = "fr") %>% 
+  ggdag_status(text_col = "black",
+               text = TRUE, 
+               edge_type = "link_arc",
+               node_size = 20,
+               text_size = 3, 
+               stylized = TRUE) + 
+  theme_dag() + 
+  guides(fill = "none", color = "none")
+
+## Temperature as response
+dag_temp <- dagify(
+  temperature ~ size + shape + sizeXshape, 
+  sizeXshape ~ size + shape,
+  shape ~ size,
+  exposure = c("sizeXshape"), 
+  outcome = "temperature"
+  #latent = c() 
+  )
+
+tidy_dagitty(dag_temp, layout = "fr") %>% 
+  ggdag_status(text_col = "black",
+               text = TRUE, 
+               edge_type = "link_arc",
+               node_size = 20,
+               text_size = 3, 
+               stylized = TRUE) + 
+  theme_dag() + 
+  guides(fill = "none", color = "none")
+
+# Adjustment set
+adjustmentSets(dag_shape, type = "minimal") 
+```
 
 ## Interactions: size, shape, and temperature
 
