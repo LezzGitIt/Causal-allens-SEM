@@ -68,9 +68,6 @@ library(smatr)
 library(ggpubr)
 library(cowplot)
 library(broom)
-library(dagitty)
-library(ggdag)
-ggplot2::theme_set(theme_cowplot())
 
 # Source functions
 source("Scripts/Key_allometry_fns.R")
@@ -296,7 +293,7 @@ The initial query produced `r nrow(Wos_refs)` studies which were manually review
 
 Of `r nrow(Lr_ecogeo2)` studies examining Bergmann's or Allen's rules, `r Per_iso` examined size and shape in isolation (@fig-barplots). Results were identical when restricting the analyses to just those identified in the Web of Science search; hereafter, I only report results from the larger set of `r nrow(Lr_ecogeo2)` studies. Importantly, authors continue to analyze ecogeographic rules in isolation even after the publication of two seminal papers in 2023 [@frohlichAllometryRevealsTradeoffs2023; @baldwinComplementarityAllensBergmanns2023]. A focus on Bergmann's rule alone (`r Per_berg`) was far more common than on Allen's rule alone (`r Per_allen`, @fig-barplots), likely because Allen's rule studies generally measured *relative* appendage length (`r Per_ral` of studies; Supporting information), i.e. appendage length controlling for body size [@symondsItsAllRelative2025]. Thus, in some respect, studies of Allen's rule were already considering body size across environmental gradients.
 
-Importantly, of the `r nrow(Lr_both)` studies that analyzed both Allen's and Bergmann's rules, only `r Per_interact` examined the rules in an integrated fashion; the other `r Per_no_interact` examined the two rules in parallel. The number of focal species in the study influenced how often authors conducted integrated versus in parallel analyses. All studies with under 20 focal species conducted analyses in parallel, whereas half of the studies with at least 20 focal species conducted integrated analyses (@fig-barplots). It is important to note some types of integrated analyses are achievable with any number of focal species (e.g., interaction models such as in CITE FIGURE), while others are not [e.g., metaregression, as in @paltrinieriEffectsClimateBat2025; @baldwinComplementarityAllensBergmanns2023].
+Importantly, of the `r nrow(Lr_both)` studies that analyzed both Allen's and Bergmann's rules, only `r Per_interact` examined the rules in an integrated fashion; the other `r Per_no_interact` examined the two rules in parallel. The number of focal species in the study influenced how often authors conducted integrated versus in parallel analyses. All studies with under 20 focal species conducted analyses in parallel, whereas half of the studies with at least 20 focal species conducted integrated analyses (@fig-barplots). It is important to note some types of integrated analyses are achievable with any number of focal species (e.g., interaction models such as in @fig-interactions), while others are not [e.g., metaregression, as in @paltrinieriEffectsClimateBat2025; @baldwinComplementarityAllensBergmanns2023].
 
 ```{r}
 #| label: export-csv 
@@ -408,76 +405,9 @@ Lr_props %>%
 
 Fewer than half of the studies published in the last five years examined Bergmann’s and Allen’s rules together, and even among these, the vast majority tested them in parallel rather than in an integrated framework. It is therefore important to consider what is lost when size and shape are studied as separate phenomenon and the possibilities of dynamic interplay are ignored. I argue that size, shape and temperature gradients regularly interact with each other, and thus require an integrated analytical framework to make robust inference. I discuss interactions broadly and then focus on two types of interactions highlighted in recent global analyses: trade-offs and complementarity [@baldwinComplementarityAllensBergmanns2023; @frohlichAllometryRevealsTradeoffs2023].
 
-```{r}
-#| label: idag
-
-## Shape as response
-dag_shape <- dagify(
-  size ~ temperature, 
-  sizeXtemperature ~ size + temperature,
-  shape ~ temperature + size + sizeXtemperature, 
-  exposure = c("sizeXtemperature"), 
-  outcome = "shape"
-  #latent = c() 
-  )
-
-tidy_dagitty(dag_shape, layout = "fr") %>% 
-  ggdag_status(text_col = "black",
-               text = TRUE, 
-               edge_type = "link_arc",
-               node_size = 20,
-               text_size = 3, 
-               stylized = TRUE) + 
-  theme_dag() + 
-  guides(fill = "none", color = "none") +
-  scale_fill_grey()
-
-## Shape as response
-dag_size_size <- dagify(
-  size ~ temperature, 
-  D_size_temperature ~ size, 
-  exposure = c("size"), 
-  outcome = "D_size_temperature"
-  #latent = c() 
-  )
-
-tidy_dagitty(dag_size_size, layout = "fr") %>% 
-  ggdag_status(text_col = "black",
-               text = TRUE, 
-               edge_type = "link_arc",
-               node_size = 20,
-               text_size = 3, 
-               stylized = TRUE) + 
-  theme_dag() + 
-  guides(fill = "none", color = "none")
-
-## Temperature as response
-dag_temp <- dagify(
-  temperature ~ size + shape + sizeXshape, 
-  sizeXshape ~ size + shape,
-  shape ~ size,
-  exposure = c("sizeXshape"), 
-  outcome = "temperature"
-  #latent = c() 
-  )
-
-tidy_dagitty(dag_temp, layout = "fr") %>% 
-  ggdag_status(text_col = "black",
-               text = TRUE, 
-               edge_type = "link_arc",
-               node_size = 20,
-               text_size = 3, 
-               stylized = TRUE) + 
-  theme_dag() + 
-  guides(fill = "none", color = "none")
-
-# Adjustment set
-adjustmentSets(dag_shape, type = "minimal") 
-```
-
 ## Interactions: size, shape, and temperature
 
-The joint examination of Bergmann's and Allen's rules allows for a more nuanced interpretation of morphology-environment relationships, particularly by testing interactions between size, shape, and temperature. For example, recent work shows that smaller species tend to exhibit stronger morphological responses to warming than larger species [@mcqueenShorebirdsAreShrinking2024; @neate-cleggAfromontaneUnderstoryBirds2024; @paltrinieriEffectsClimateBat2025], likely due to greater evolutionary potential through larger effective population sizes, higher genetic variance, and faster molecular evolution [@orkneySmallBodySize2024; @zimovaBodySizePredicts2023]. Similarly, @frohlichAllometryRevealsTradeoffs2023 found that including interactions between size and shape often reversed apparent temperature–morphology relationships. For example, despite overall conformity to Bergmann’s rule, inverse patterns (i.e., smaller body size at colder temperatures) emerged in birds with particularly short bills and long legs. Likewise, while Allen’s rule predicts longer appendages in warmer regions, this pattern only held for large-bodied species; small-bodied species showed the opposite trend (@fig-interactions). Without modeling these interactions, conclusions would have been misleading, underscoring the importance of incorporating trait codependence when testing ecogeographical rules [@gastonEcogeographicalRulesElements2008].
+The joint examination of Bergmann's and Allen's rules allows for a more nuanced interpretation of morphology-environment relationships, particularly by testing interactions between size, shape, and temperature. For example, recent work shows that smaller species tend to exhibit stronger morphological responses to warming than larger species [@mcqueenShorebirdsAreShrinking2024; @neate-cleggAfromontaneUnderstoryBirds2024; @paltrinieriEffectsClimateBat2025], likely due to greater evolutionary potential through larger effective population sizes, higher genetic variance, and faster molecular evolution [@orkneySmallBodySize2024; @zimovaBodySizePredicts2023]. Similarly, @frohlichAllometryRevealsTradeoffs2023 found that including interactions between size and shape often reversed apparent temperature–morphology relationships. For example, despite overall conformity to Bergmann’s rule, inverse patterns (i.e., smaller body size at colder temperatures) emerged in birds with particularly short bills and long legs. Likewise, while Allen’s rule predicts longer appendages in warmer regions, this pattern only held for large-bodied species; small-bodied species showed the opposite trend (@fig-interactions). Importantly, these interactions were tested across species in @frohlichAllometryRevealsTradeoffs2023, but they could just as easily be examined within-species provided adequate sample size. This represents an important area of future research given the paucity of studies examining interactions within species (e.g., studies with a single focal species in @fig-barplots). Without modeling these interactions, conclusions would have been misleading, underscoring the importance of incorporating trait codependence when testing ecogeographical rules [@gastonEcogeographicalRulesElements2008].
 
 ![Modeling interactions between size and shape is critical in understanding tradeoffs in organismal response to increasing temperatures. In predicting a species' experienced temperature envelope, Fröhlich et al (2023) found that the environment-morphology relationship of mass (top left), beak (top right), and tarsus (bottom) was dependent on the size and shape of the organism. All relationships were highly significant at p \< 0.001. See Figure 4 in Fröhlich et al (2023) for additional infromation; figure was modified and reproduced with permission from Arkadiusz Fröhlich.](../Figures/Frohlich_fig4F_modified.pdf){#fig-interactions}
 
@@ -488,6 +418,8 @@ Past work has found that species responded to warming either by decreasing body 
 ### Complementarity: coordinated shifts in size and shape
 
 Complementarity occurs when coordinated shifts in both body size and appendage length produce similar changes in surface area–to–volume ratios compared to larger shifts in either trait alone. In a recent study by @baldwinComplementarityAllensBergmanns2023, “complementarity” was strongly supported as 81% of the 107 bird families examined failed to demonstrate sufficient shifts in either size or shape to confirm tests of Bergmann’s or Allen’s rules when analyzed separately (@fig-sa-to-v). No family conformed to both rules simultaneously. Instead, most families exhibited modest but coordinated changes in size and shape in the directions predicted by both rules [also see @dubinerWidespreadRecentChanges2022]. Such adjustments may buffer against the fitness costs of extreme changes in a single trait while still permitting meaningful shifts to thermoregulatory capacity. Again, complementarity can be considered an interaction. Here, constraints act on both size and appendages such that neither trait can shift far on its own, but a more tempered response emerges from each trait (i.e., temperature × 'strength of constraint' interaction).
+
+![Temperature's influence on body size and shape is influenced by functional constraints, and by size and shape themselves. Size influences shape through allometry. Solid lines represent direct effects and dashed lines represent interactions.](../Figures/Conceptual_model.png){#fig-conceptual-model}
 
 ## The Thermo-Morpho Rule
 
