@@ -168,6 +168,79 @@ rsvg_png(
 
 stop()
 
+# >Legend -----------------------------------------------------------------
+
+Legend <- "
+# -------------------------
+# Legend
+# -------------------------
+
+subgraph cluster_legend {
+
+  label = 'Legend'
+  fontsize = 14
+  fontname = Helvetica
+  color = gray85
+  style = rounded
+
+  key1 [
+    label = 'Direct effect',
+    shape = plaintext,
+    fontsize = 12
+  ]
+
+  key2 [
+    label = 'Interaction / moderation',
+    shape = plaintext,
+    fontsize = 12
+  ]
+
+  solidA [
+    label = '',
+    shape = point,
+    width = 0.01
+  ]
+
+  solidB [
+    label = '',
+    shape = point,
+    width = 0.01
+  ]
+
+  dashA [
+    label = '',
+    shape = point,
+    width = 0.01
+  ]
+
+  dashB [
+    label = '',
+    shape = point,
+    width = 0.01
+  ]
+
+  solidA -> solidB [
+    style = solid,
+    penwidth = 2,
+    arrowsize = 0.8
+  ]
+
+  dashA -> dashB [
+    style = dashed,
+    color = gray40,
+    penwidth = 2,
+    arrowsize = 0.8
+  ]
+
+  {rank = same; solidA; solidB; key1}
+  {rank = same; dashA; dashB; key2}
+}
+"
+
+Mod_legend <- paste0(Full_mod, Legend, "\n}")
+
+make_figure(Mod_legend)
+
 # Extras ------------------------------------------------------------------
 # >IDAGs ------------------------------------------------------------------
 library(dagitty)
