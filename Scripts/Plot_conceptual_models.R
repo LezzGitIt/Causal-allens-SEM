@@ -1,15 +1,21 @@
 ## Conceptual figures for paper 'Beyond Bergmann and Allen: A Unified Framework for Thermoregulatory Morphology'
+# 
 
 # Libraries ---------------------------------------------------------------
 library(DiagrammeR)
 library(DiagrammeRsvg)
 library(rsvg)
 library(glue)
+library(cowplot)
+library(ggplot2)
+library(png)
+library(grid)
 ggplot2::theme_set(theme_cowplot())
 
 # Conceptual model -------------------------------------------------------
+## Create conceptual model figure using DiagrammeR
 
-# Function to paste new 'modules' to base graph and depict using grViz()
+# Function to paste pieces of figure together and depict using grViz(). I will create 'modules' that will be added to the base graph to build figure up with increasing complexity 
 make_figure <- function(extra = "") {
   
   graph_txt <- glue("
@@ -23,8 +29,8 @@ make_figure <- function(extra = "") {
   grViz(graph_txt)
 }
 
-
 # >Base graph -------------------------------------------------------------
+# Base graph + interaction nodes
 base_graph <- "
 digraph conceptual_model {
 
@@ -112,6 +118,7 @@ Int2 [
 "
 
 # >Interactions -----------------------------------------------------------
+# Interaction paths
 interaction_paths <- "
 # Interaction moderation
 
@@ -125,10 +132,10 @@ Shape -> Int2 [
   color = gray40
 ]
 "
-make_figure(interaction_paths)
-
+interaction_grViz <- make_figure(interaction_paths)
 
 # >Functional constraints -------------------------------------------------
+# Functional constraints node + interaction paths
 constraints_module <- "
 # Functional constraints
 FC [
@@ -140,7 +147,7 @@ FC [
 ]
 
 FC -> Int1 [
-  style = dashed, 
+  style = dashed,
   color = gray40
 ]
 
@@ -151,25 +158,91 @@ FC -> Int2 [
 "
 make_figure(constraints_module) 
 
-# >Full model -------------------------------------------------------------
-# Temperature's influence on body size and shape is influenced by functional constraints, and by size and shape themselves. Size influences shape through allometry. Solid lines represent direct effects and dashed lines represent interactions.
+# >Correlated responses ---------------------------------------------------
+# Correlated responses between temperature and shape & temperature & size, as in complementarity 
 
-Full_mod_text <- glue(interaction_paths, constraints_module)
-Full_mod_grViz <- make_figure(Full_mod)
+# Want this to be curved
+complementarity <- "
+Int1 -> Int2 [
+  dir = both,
+  color = gray30,
+  penwidth = 3,
+  constraint = false,
+  arrowsize = 0.9,
+  minlen = 2,
+  splines = curved
+]
+"
+
+Baldwin_text <- glue(constraints_module) # , complementarity
+Baldwin_grViz <- make_figure(Baldwin_text)
+# Visualize
+Baldwin_grViz
+
+# >Full model -------------------------------------------------------------
+# Paste together components of the model and export figure
+
+Full_mod_text <- glue(interaction_paths, constraints_module, complementarity)
+Full_mod_grViz <- make_figure(Full_mod_text)
+# Visualize
+Full_mod_grViz
+
+# Export ------------------------------------------------------------------
+
 svg <- export_svg(Full_mod_grViz)
 
-# Export as a png
-rsvg_png(
-  charToRaw(svg),
-  file = "Figures/Conceptual_model.png",
-  width = 850,
-  height = 450
+export_graph <- function(g, file, width = 1200, height = 900){
+  
+  svg <- export_svg(g)
+  
+  rsvg_png(
+    charToRaw(svg),
+    file = file,
+    width = width,
+    height = height
+  )
+}
+
+# Export as png
+export_graph(interaction_grViz, "Figures/Conceptual_model_a.png")
+export_graph(Baldwin_grViz, "Figures/Conceptual_model_b.png")
+
+# Import and combine ------------------------------------------------------
+
+img1 <- rasterGrob(readPNG("Figures/Conceptual_model_a.png"))
+img2 <- rasterGrob(readPNG("Figures/Conceptual_model_b.png"))
+
+p1 <- ggplot() +
+  annotation_custom(img1, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) +
+  theme_void()
+
+p2 <- ggplot() +
+  annotation_custom(img2, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) +
+  theme_void()
+
+combined <- plot_grid(
+  p1, p2,
+  labels = c("a)", "b)"),
+  ncol = 2,
+  label_size = 14
+)
+# Visualized
+combined 
+
+# Save combined figure
+ggsave(
+  "Figures/Conceptual_model_panels.png",
+  combined,
+  width = 11.5,
+  height = 4,
+  dpi = 300,
+  bg = "white"
 )
 
 stop()
 
 # >Legend -----------------------------------------------------------------
-
+## Working
 Legend <- "
 # -------------------------
 # Legend
