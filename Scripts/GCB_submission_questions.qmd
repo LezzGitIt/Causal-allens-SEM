@@ -8,7 +8,7 @@ link-citations: true
 csl: ../Suppfiles/methods-in-ecology-and-evolution.csl
 ---
 
-# Important note 
+# Important note
 
 There is conflicting information on the [author guidelines page](https://onlinelibrary.wiley.com/page/journal/13652486/homepage/forauthors.html#3) and the [submission checklist](https://onlinelibrary.wiley.com/pb-assets/assets/13652486/docs/GCB-initial-submission-checklist-DEC%202025-1764746800740.pdf) regarding an opinion vs a perspective. In essence, they are switched, such that the author guidelines page says that opinion articles should be 3000-5000 words and perspectives are \<1,500 words. This is reversed on the submission checklist.
 

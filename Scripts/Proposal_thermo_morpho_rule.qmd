@@ -39,14 +39,14 @@ source("Scripts/Key_allometry_fns.R")
 #| label: Load-in-format-data
 
 Lr_allens <- read_excel("Lit_review/Methods_ecogeographic_rules_8.24.25.xlsx", 
-                         sheet = "Updated Excel") %>% 
+                         sheet = "Allens") %>% 
   clean_names() %>% 
   filter(include_exclude != "Exclude") %>%
   dplyr::select(authors, year, journal, bergmann) %>% 
   mutate(focus = ifelse(bergmann == "Y", "Both", "Allens_only")) %>% 
   dplyr::select(-bergmann)
 Lr_bergs <- read_excel("Lit_review/Methods_ecogeographic_rules_8.24.25.xlsx", 
-                         sheet = "Bergs studies") %>% 
+                         sheet = "Bergmanns") %>% 
   clean_names() %>% 
   dplyr::select(authors, year, journal, allens) %>% 
   mutate(focus = ifelse(allens == "Y", "Both", "Bergmanns_only")) %>% 
