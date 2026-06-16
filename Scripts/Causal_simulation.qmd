@@ -1,0 +1,466 @@
+---
+title: "Causal modeling data simulation"
+editor: visual
+number-sections: true
+# If you do not want code to show... echo: false
+execute: 
+ echo: true
+ #include: false
+ message: false
+ warning: false 
+format: pdf
+include-in-header: # package float allows you to specify 'H' instead of 'h'
+      text: |
+        \usepackage{float} 
+bibliography: ../Suppfiles/Morphology.bib
+link-citations: true
+csl: ../Suppfiles/methods-in-ecology-and-evolution.csl
+knitr:
+  opts_chunk: 
+    comment: "#>"
+    collapse: true
+editor_options: 
+  chunk_output_type: console
+---
+
+{{< pagebreak >}}
+
+```{r}
+#| label: libraries
+#| echo: false
+
+library(tidyverse)
+library(cowplot)
+library(broom)
+library(ggplot2)
+library(dagitty)
+library(ggdag)
+library(DiagrammeR)
+library(DiagrammeRsvg)
+library(rsvg)
+ggplot2::theme_set(theme_cowplot())
+```
+
+```{r}
+#| label: create-dag-fn
+#| echo: false
+
+create_dag <- function(mass_pred, length_pred,
+                       latent_size = FALSE,
+                       add_formula = NULL,
+                       add_formula2 = NULL){
+
+  mass_formula   <- as.formula(paste("Mass ~",   deparse(substitute(mass_pred))))
+  length_formula <- as.formula(paste("Length ~", deparse(substitute(length_pred))))
+
+  args <- list(
+    mass_formula,
+    length_formula,
+    exposure = "Temp",
+    outcome  = "Length",
+    labels   = c(Temp = "Temperature")
+  )
+
+  if (latent_size) args$latent <- "Size"
+
+  if (!is.null(add_formula)) {
+    add_formula <- as.formula(add_formula)
+    args <- c(list(add_formula), args)
+  }
+  
+    if (!is.null(add_formula2)) {
+    add_formula2 <- as.formula(add_formula2)
+    args <- c(list(add_formula2), args)
+  }
+
+  do.call(dagify, args)
+}
+```
+
+```{r}
+#| label: plot-dag-fn
+#| echo: false
+
+plot_dag <- function(dag_obj){
+  tidy_dagitty(dag_obj, layout = "fr") %>% 
+  ggdag_status(text_col = "black",
+               text = TRUE, 
+               edge_type = "link_arc",
+               node_size = 20,
+               text_size = 3, 
+               stylized = TRUE) + 
+  theme_dag() + 
+  guides(color = "none")
+}
+```
+
+# Causal model
+
+I will simulate 5,000 individuals of a hypothetical species consistent with the following DAG.
+
+```{r}
+#| label: fig-dag-size
+#| fig-cap: Treating size as a latent variable that is influenced by both appendage length and body mass has several advantages.
+#| fig-pos: "H"
+#| echo: false
+
+dag_size <- create_dag(
+  mass_pred   = Size,
+  length_pred = Temp + Size ,
+  latent_size = TRUE, # TRUE
+  add_formula = "Size ~ Temp"
+)
+
+plot_dag(dag_size)
+```
+
+# Simulation
+
+We model size as a function of temperature, mass as being influenced by size (i.e. temperature has no direct effect on mass), and length as a function of size AND temperature. This is because Allen's rule predicts that temperature will increase length BEYOND just allometric scaling effects (i.e. changes in length due to to changes in overall size).
+
+```{r}
+#| label: Simulation
+
+N <- 5000
+Temp <- rnorm(N, 1, .3) # Average 1 degree C increase
+Size <- rnorm(N, 4 - (.4 * Temp), .5) # Unitless latent size
+
+## Morphology
+# Mass
+error_mass <- rnorm(N, 0, .8)
+Mass <- 50 + (2 * Size) + error_mass # Latent mass in grams
+# Observed measurements of mass are noisy copies of 'true' mass
+M1 <- rnorm(N, Mass, 1) 
+M2 <- rnorm(N, Mass, 1)
+M3 <- rnorm(N, Mass, 1)
+
+# Wing length
+error_w <- rnorm(N, 0, 3)
+B_temp_w <- 0.3 # Estimand
+Wing <- 168 + (B_temp_w * Temp) + (2 * Size) + error_w # Wing length in mm
+hist(Wing)
+
+# Tarsus
+error_t <- rnorm(N, 0, 1)
+B_temp_t <- 0.15 # Estimand
+Tarsus <- 40 + (B_temp_t * Temp) + (.8 * Size) + error_t
+hist(Tarsus)
+
+# Body length ??
+
+# Combine into a tbl
+Morph <- tibble(Temp, Size, Wing, Tarsus, Mass, M1, M2, M3)
+Morph_s <- Morph %>% mutate(across(where(is.numeric), \(col) as.numeric(scale(col))))
+```
+
+Examine the simulated correlations - notice that temperature is negatively correlated with size, length, and mass, whereas the morphological relationships are positively correlated.
+
+```{r}
+#| label: Correlations
+
+Morph %>%
+  select(Temp, Size, Wing, Tarsus, Mass) %>%
+  cor(use = "complete.obs") %>%
+  data.frame() %>%
+  mutate(across(everything(), round, 2))
+```
+
+# Biological plausibility
+
+Plot density curves of simulated variables. These numbers are similar to the species I worked with in my Masters, the Eastern Whip-poor-will.
+
+```{r}
+#| label: Density-curves
+
+Morph %>%
+  pivot_longer(cols = c(Wing, Tarsus, Size, Mass, Temp),
+               names_to = "Variable") %>%
+  ggplot(aes(x = value)) + #color = factor(Species)
+  geom_density(aes(y = ..scaled..), linewidth = 0.5) +
+  #scale_color_manual(values = color_vec) +
+  facet_wrap(~Variable, scales = "free") +
+  theme(legend.position = "none") +
+  labs(x = NULL)
+```
+
+To quickly check the biological plausibility... We'd expect that the allometric scaling relationship between mass and length is around 0.33 (isometric scaling).
+
+```{r}
+#| label: allometric-relationships
+
+Allom_mod <- lm(log(Wing) ~ log(Mass), data = Morph)
+tidy(Allom_mod)
+```
+
+The scaling relationship in our simulated data is low (hypoallometric scaling) but reasonable.
+
+# Linear models
+
+Run three basic linear models, with wing length as a function of temperature and 1) latent size, 2) latent mass, or 3) a single measurement of mass. Remember that we simulated the slope between Temperature increase and Wing to be `r B_temp_w`.
+
+```{r}
+#| label: Models
+
+Size_mod <- lm(Wing ~ Size + Temp, data = Morph) # Latent size
+tidy(Size_mod)
+
+Mass_mod <- lm(Wing ~ Mass + Temp, data = Morph) # 'True' latent mass
+tidy(Mass_mod)
+
+M1_mod <- lm(Wing ~ M1 + Temp, data = Morph) # If we only measure mass once
+tidy(M1_mod)
+```
+
+The model including latent size produces the best estimate of temperature's effect on wing length, and the 95% confidence interval around the slope of temperature ($\beta_T$) includes the true slope of `r B_temp_w`. This is not surprising given that this is the model that matches the data-generating process. The problem is that in reality size is latent (i.e. not directly observed), and thus we cannot include it directly in the models. Thus, this model has no valid adjustment set (no output).
+
+```{r}
+#| label: adjustment-set
+
+adjustmentSets(dag_size, effect = "direct") 
+```
+
+Modeling M1 produces a more biased estimate of temperature than modeling latent mass.
+
+# Latent factor model
+
+Given that size is latent our only option is to model it as so. Thus, latent size can be estimated through the shared variance between the traits mass and length. These factor loadings are estimated from the data and indicate the extent to which each trait reflects the common latent factor of structural body size. Traits are treated symmetrically, such that the model is agnostic to the causal relationship between mass and length. The higher order latent factor represents structural size, and variance is partitioned between shared structure and trait-specific deviations.
+
+Let $i$ index individuals, such that the mass and length of individual $i$ are modeled as: $$\text{Mass}_{i} = \lambda_{mass} \cdot \text{Size}_{i} + \epsilon_{i}$$
+
+$$\text{Length}_{i} = \lambda_{length} \cdot \text{Size}_{i} + \delta_{i}$$
+
+- $\text{Size}_i$ is a latent variable representing true structural size.
+- $\lambda_{mass}$ and $\lambda_{length}$ are the factor loadings for mass and lengthiness, respectively
+- $\epsilon_{i}$ and $\delta_{i}$ captures variation in latent mass and length, respectively, that is not captured by latent $\text{Size}$. Importantly, $\delta_{i}$ is our measure of relative lengthiness, i.e. length adjusted for body size \[IS THAT CORRECT TO SAY?\]
+
+```{r}
+#| label: path-diagrammeR
+
+gr <- grViz("
+digraph SEM {
+  graph [rankdir = BT]
+  graph [layout = dot, splines = line]  // force straight edges
+
+  # node shapes
+  node [shape = oval, style = filled, fillcolor = LightGray]
+  Size
+  Length
+  Mass
+
+  node [shape = box, style = filled, fillcolor = LightGray]
+  M1 M2 M3 A1 A2 A3 Temperature
+
+  # measurement model
+  Size -> Length
+  Size -> Mass
+  Mass -> M1
+  Mass -> M2
+  Mass -> M3
+  Length -> A1
+  Length -> A2
+  Length -> A3
+
+  # structural model with labels
+  Temperature -> Size [label = 'Bergmanns \nRule']
+  Temperature -> Length [label = 'Allens \nRule']
+}
+")
+
+svg <- export_svg(gr)
+svg_clean <- charToRaw(enc2utf8(svg))
+rsvg::rsvg_pdf(svg_clean, "Figures/path_diagram.pdf")
+```
+
+![Path diagram showing a hypothetical model that could be used to test Allen's rule for any number of appendages. Ovals represent latent variables and rectangles represent measured variables. M1 - M3 represent multiple measurements of mass at an appropriate time scale; A1 - A3 represent three distinct appendages (e.g., tarsus, wing, and bill length). Repeat measurements could also be taken for appendage variables, but transient fluctuations in mass are almost certainly more important to account for. Intercepts and residual errors are implied and thus not shown.](../Figures/path_diagram.pdf)
+
+## Measurement model
+
+In this model, mass and length (or “lengthiness”) are also latent variables, with each individual’s true mass and lengthiness reflected in the shared variance among their manifest indicators (M1–M3 and A1–A3, respectively). This is particularly important for mass, which is subject to transient fluctuation 'error'. Transient fluctuation 'error' is real biological variation in our *estimate* of body size that do not reflect changes in structural body size [this has also been called 'biological error', e.g., @ponziHeritabilitySelectionResponse2018]. This could be variation due to gut fill, defecation, reproductive or hydration state, etc. that do not reflect relevant changes in structural body size, yet will influence mass measurements. Parameterizing length as latent is a parsimonious way to use information from any number of appendage variables (e.g., ear, hind foot, total body length). Note that any appendage variable with repeat measurements could also be parameterized as latent, which could be important in small species or traits with small dimensions [e.g., bill width; @theriotHarnessingNaturalHistory2023]. This model could also be parameterized such that each length variable directly influences body size, which would alter the variance partitioning between length and mass.
+
+In this case, the latent factor model of mass (@eq-mass-latent-factor-model) becomes
+
+$$\text{Mass}_{ij} = \lambda_{mass} \cdot \text{Size}_i + \epsilon^{TF}_{ij} + \epsilon_{ij} $$ {#eq-measurement-error-model}
+
+where $Mass_{ij}$ is the mass of individual $i$ on measurement $j$, $\epsilon^{TF}_{ij}$ captures transient fluctuations, and $\epsilon_{ij}$ soaks up any additional variation in mass not explained by latent size or repeat measurements. Partitioning residual variance in mass can improve estimates of latent size and ultimately $\delta_{i}$ (@eq-appendage-latent-factor-model), our index of relative lengthiness.
+
+## Structural model
+
+The structural model is defined by our question of interest - temperature's effect on relative length (Allen's rule), such that $\delta_{i}$ is estimated as \[THIS PARAMETERIZATION PROBABLY ONLY ADDS CONFUSION. I BELIEVE THAT THE SEM ESTIMATES ALL THESE THINGS SIMULTANEOUSLY IT DOESN'T ACTUALLY TREAT THIS COMING FROM A NORMAL DISTRIBUTION):
+
+$$\delta_{i} \sim \mathcal{N}(\beta_T \cdot \text{Temp}_i, \sigma^2)$$ {#eq-latent-shape-model}
+
+where $\beta_T$ is the estimand of interest (the direct effect of temperature on relative length) and $\sigma^2$ is residual variation in relative length not explained by temperature. Conveniently, this model also estimates temperature's effect on latent size (i.e., Bergmann's rule).
+
+While path analysis has occasionally been used in studies of Allen’s rule in recent years [e.g., @liAppendageSizesThree2024; @frohlichAllometryRevealsTradeoffs2023; @xuEcologicalPredictorsInterspecific2023], size has not been estimated as a latent variable (Skinner in prep). However, this approach offers several advantages, as it: 1) accounts for allometric scaling without assuming directional causality (i.e. that mass causes appendage length), 2) incorporates size information from an arbitrary number of traits, 3) distinguishes variance due to transient fluctuations / measurement error from residual error (@eq-measurement-error-model), reducing bias in our estimand of interest $\beta_T$, and, 4) jointly estimates temperature's impact on latent body size (Bergmann's rule) and relative length (Allen's rule). This model naturally propagates uncertainty through all model levels (if estimated in a Bayesian framework), and can easily be extended to incorporate additional biological complexity, such as phylogenetic structure, random effects, or spatial and temporal autocorrelation [e.g., @frohlichAllometryRevealsTradeoffs2023].
+
+## Model implementation
+
+```{r}
+
+library(rstan)
+
+# Sufficient statistics for mass repeat measurements (marginalizes out individual-level
+# latent Mass, reducing parameters from 3N to N)
+M_bar <- (Morph_s$M1 + Morph_s$M2 + Morph_s$M3) / 3
+SS_M  <- (Morph_s$M1 - M_bar)^2 + (Morph_s$M2 - M_bar)^2 + (Morph_s$M3 - M_bar)^2
+
+stan_data <- list(
+  N      = nrow(Morph_s),
+  Temp   = Morph_s$Temp,
+  M_bar  = M_bar,
+  SS_M   = SS_M,
+  Wing   = Morph_s$Wing,
+  Tarsus = Morph_s$Tarsus
+)
+
+start <- Sys.time()
+stan_out <- stan(file   = "Scripts/latent_size2.stan",
+                 data   = stan_data,
+                 chains = 4,
+                 cores  = 4,
+                 iter   = 3000,
+                 warmup = 1000)
+end <- Sys.time()
+end - start
+
+# Export stan model
+#saveRDS(stan_out, file = "Rdata/latent_size2_3indicator_stan.rds")
+```
+
+```{r}
+
+# Load in stan model
+#stan_out <- readRDS("Rdata/latent_size2_3indicator_stan.rds")
+
+# Extract posteriors on standardized scale
+posterior_b_temp_w_std <- rstan::extract(stan_out, pars = "b_temp_w")$b_temp_w
+posterior_b_temp_t_std <- rstan::extract(stan_out, pars = "b_temp_t")$b_temp_t
+
+# Scale factors from original (non-standardized) data
+sd_Wing   <- sd(Morph$Wing)
+sd_Tarsus <- sd(Morph$Tarsus)
+sd_Temp   <- sd(Morph$Temp)
+
+# Backtransform to original scale
+b_temp_w_original <- posterior_b_temp_w_std * (sd_Wing   / sd_Temp)
+b_temp_t_original <- posterior_b_temp_t_std * (sd_Tarsus / sd_Temp)
+
+# Posterior summaries
+mean_w <- mean(b_temp_w_original)
+ci_w   <- quantile(b_temp_w_original, c(0.025, 0.975))
+mean_t <- mean(b_temp_t_original)
+ci_t   <- quantile(b_temp_t_original, c(0.025, 0.975))
+
+cat("Posterior summary of b_temp_w (Wing) on original scale:\n")
+cat("Mean:", round(mean_w, 4), "\n")
+cat("95% CI: [", round(ci_w[1], 4), ", ", round(ci_w[2], 4), "]\n")
+cat("True value (B_temp_w):", B_temp_w, "\n\n")
+
+cat("Posterior summary of b_temp_t (Tarsus) on original scale:\n")
+cat("Mean:", round(mean_t, 4), "\n")
+cat("95% CI: [", round(ci_t[1], 4), ", ", round(ci_t[2], 4), "]\n")
+cat("True value (B_temp_t):", B_temp_t, "\n\n")
+
+# Stan diagnostic summaries
+rstan::summary(stan_out, pars = c("b_temp_w", "b_temp_t", "sigma_size",
+                                   "lambda_wing", "lambda_tarsus"))$summary
+```
+
+```{r}
+
+# Posterior plots for both Allen's rule coefficients
+df_post <- data.frame(
+  b_temp    = c(b_temp_w_original, b_temp_t_original),
+  Parameter = rep(c("Wing (true = 0.3)", "Tarsus (true = 0.15)"),
+                  each = length(b_temp_w_original))
+)
+
+true_vals <- data.frame(
+  Parameter  = c("Wing (true = 0.3)", "Tarsus (true = 0.15)"),
+  true_value = c(B_temp_w, B_temp_t),
+  post_mean  = c(mean_w, mean_t)
+)
+
+ggplot(df_post, aes(x = b_temp)) +
+  geom_density(fill = "steelblue", alpha = 0.6) +
+  geom_vline(data = true_vals, aes(xintercept = post_mean),
+             linetype = "solid", color = "red", linewidth = 1) +
+  geom_vline(data = true_vals, aes(xintercept = true_value),
+             linetype = "dashed", color = "black", linewidth = 1) +
+  facet_wrap(~Parameter, scales = "free") +
+  labs(x = "Temperature effect on appendage length",
+       y = "Posterior density",
+       title = "Posterior distributions of Allen's rule coefficients",
+       subtitle = "Red: posterior mean | Black dashed: true value") +
+  theme_minimal()
+
+# Trace plots for diagnostics
+plot(stan_out, ask = FALSE)
+```
+
+```{r}
+library(blavaan)
+
+model <- '
+  Mass_lat =~ 1*M1 + M2 + M3
+  Length_lat =~ 1*L1 + L2 + L3
+
+  Size_lat =~ 1*Mass_lat + b*Length_lat
+
+  Size_lat ~ Temp
+  Length_lat ~ Size_lat + Temp
+'
+# Recursive, where Size is predicted by length and then length is predicted by size later on
+model <- '
+  Length_lat =~ L1 + L2 + L3
+  Size_lat =~ M1 + M2 + M3 + Length_lat
+  Size_lat ~ Temp
+  Length_lat ~ Temp + Size_lat
+'
+
+# Still recursive
+model <- '
+  Mass_lat =~ M1 + M2 + M3
+  Size_lat =~ Mass_lat + Length
+  Size_lat ~ Temp
+  Length ~ Temp + Size_lat
+'
+
+# Works - but coefficient on temp is 0.1 
+model <- '
+  Size_lat =~ M1 + M2 + M3 + L1 + L2 + L3
+
+  Size_lat ~ Temp
+  Length ~ Temp + Size_lat
+'
+
+# Works - coefficient on temp is -0.5 , because overall size is decreasing 
+model2 <- '
+  Size_lat =~ M1 + M2 + M3 + L1 + L2 + L3
+
+  Size_lat ~ Temp
+  Length ~ Temp
+'
+
+# GPT 
+model3 <- '
+  Mass_lat =~ M1 + M2 + M3
+  Length ~ Temp + Mass_lat
+  Mass_lat ~ Temp
+'
+
+fit3 <- bsem(
+  model3,
+  data = Morph,
+  burnin = 2000,
+  sample = 5000,
+  n.chains = 4
+)
+
+summary(fit3, standardized = TRUE)
+
+```
+
+{{< pagebreak >}}
+
+# References
