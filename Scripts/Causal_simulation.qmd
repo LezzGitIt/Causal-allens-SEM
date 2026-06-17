@@ -393,69 +393,6 @@ ggpubr::ggarrange(p_w, p_t, nrow = 1)
 plot(stan_out_3ind, ask = FALSE)
 ```
 
-```{r}
-library(blavaan)
-
-model <- '
-  Mass_lat =~ 1*M1 + M2 + M3
-  Length_lat =~ 1*L1 + L2 + L3
-
-  Size_lat =~ 1*Mass_lat + b*Length_lat
-
-  Size_lat ~ Temp
-  Length_lat ~ Size_lat + Temp
-'
-# Recursive, where Size is predicted by length and then length is predicted by size later on
-model <- '
-  Length_lat =~ L1 + L2 + L3
-  Size_lat =~ M1 + M2 + M3 + Length_lat
-  Size_lat ~ Temp
-  Length_lat ~ Temp + Size_lat
-'
-
-# Still recursive
-model <- '
-  Mass_lat =~ M1 + M2 + M3
-  Size_lat =~ Mass_lat + Length
-  Size_lat ~ Temp
-  Length ~ Temp + Size_lat
-'
-
-# Works - but coefficient on temp is 0.1 
-model <- '
-  Size_lat =~ M1 + M2 + M3 + L1 + L2 + L3
-
-  Size_lat ~ Temp
-  Length ~ Temp + Size_lat
-'
-
-# Works - coefficient on temp is -0.5 , because overall size is decreasing 
-model2 <- '
-  Size_lat =~ M1 + M2 + M3 + L1 + L2 + L3
-
-  Size_lat ~ Temp
-  Length ~ Temp
-'
-
-# GPT 
-model3 <- '
-  Mass_lat =~ M1 + M2 + M3
-  Length ~ Temp + Mass_lat
-  Mass_lat ~ Temp
-'
-
-fit3 <- bsem(
-  model3,
-  data = Morph,
-  burnin = 2000,
-  sample = 5000,
-  n.chains = 4
-)
-
-summary(fit3, standardized = TRUE)
-
-```
-
 {{< pagebreak >}}
 
 # References
