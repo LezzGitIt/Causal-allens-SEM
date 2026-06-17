@@ -135,21 +135,25 @@ M2 <- rnorm(N, Mass, 1)
 M3 <- rnorm(N, Mass, 1)
 
 # Wing length
-error_w <- rnorm(N, 0, 3)
-B_temp_w <- 0.3 # Estimand
+error_w <- rnorm(N, 0, .5)
+B_temp_w <- 0.6 # Estimand
 Wing <- 168 + (B_temp_w * Temp) + (2 * Size) + error_w # Wing length in mm
 hist(Wing)
 
 # Tarsus
-error_t <- rnorm(N, 0, 1)
-B_temp_t <- 0.15 # Estimand
+error_t <- rnorm(N, 0, 0.15)
+B_temp_t <- 0.3 # Estimand
 Tarsus <- 40 + (B_temp_t * Temp) + (.8 * Size) + error_t
 hist(Tarsus)
 
-# Body length ??
+# Body length
+error_bl <- rnorm(N, 0, 1)
+B_temp_bl <- 0.4 # Estimand
+BL <- 255 + (B_temp_bl * Temp) + (3 * Size) + error_bl # Body length in mm
+hist(BL)
 
 # Combine into a tbl
-Morph <- tibble(Temp, Size, Wing, Tarsus, Mass, M1, M2, M3)
+Morph <- tibble(Temp, Size, Wing, Tarsus, BL, Mass, M1, M2, M3)
 Morph_s <- Morph %>% mutate(across(where(is.numeric), \(col) as.numeric(scale(col))))
 ```
 
@@ -159,7 +163,7 @@ Examine the simulated correlations - notice that temperature is negatively corre
 #| label: Correlations
 
 Morph %>%
-  select(Temp, Size, Wing, Tarsus, Mass) %>%
+  select(Temp, Size, Wing, Tarsus, BL, Mass) %>%
   cor(use = "complete.obs") %>%
   data.frame() %>%
   mutate(across(everything(), round, 2))
@@ -173,7 +177,7 @@ Plot density curves of simulated variables. These numbers are similar to the spe
 #| label: Density-curves
 
 Morph %>%
-  pivot_longer(cols = c(Wing, Tarsus, Size, Mass, Temp),
+  pivot_longer(cols = c(Wing, Tarsus, BL, Size, Mass, Temp),
                names_to = "Variable") %>%
   ggplot(aes(x = value)) + #color = factor(Species)
   geom_density(aes(y = ..scaled..), linewidth = 0.5) +
@@ -299,42 +303,49 @@ While path analysis has occasionally been used in studies of Allen’s rule in r
 
 library(rstan)
 
-# Sufficient statistics for mass repeat measurements (marginalizes out individual-level
-# latent Mass, reducing parameters from 3N to N)
-M_bar <- (Morph_s$M1 + Morph_s$M2 + Morph_s$M3) / 3
-SS_M  <- (Morph_s$M1 - M_bar)^2 + (Morph_s$M2 - M_bar)^2 + (Morph_s$M3 - M_bar)^2
-
+# BL is included so this same list works for both 3- and 4-indicator models.
+# Stan silently ignores list elements not declared in the model's data block.
 stan_data <- list(
   N      = nrow(Morph_s),
   Temp   = Morph_s$Temp,
-  M_bar  = M_bar,
-  SS_M   = SS_M,
+  Mass   = Morph_s$Mass,
   Wing   = Morph_s$Wing,
-  Tarsus = Morph_s$Tarsus
+  Tarsus = Morph_s$Tarsus,
+  BL     = Morph_s$BL
 )
 
+# --- 3-indicator model (Mass + Wing + Tarsus) ---
 start <- Sys.time()
-stan_out <- stan(file   = "Scripts/latent_size2.stan",
-                 data   = stan_data,
-                 chains = 4,
-                 cores  = 4,
-                 iter   = 3000,
-                 warmup = 1000)
+stan_out_3ind <- stan(file    = "Scripts/latent_size_3ind.stan",
+                      data    = stan_data,
+                      chains  = 4, cores = 4,
+                      iter    = 2000, warmup = 1000,
+                      control = list(adapt_delta = 0.95, max_treedepth = 12))
 end <- Sys.time()
 end - start
+saveRDS(stan_out_3ind, file = "Rdata/latent_size_3ind_stan.rds")
 
-# Export stan model
-#saveRDS(stan_out, file = "Rdata/latent_size2_3indicator_stan.rds")
+# --- 4-indicator model (Mass + Wing + Tarsus + BL) ---
+if(FALSE){
+#start <- Sys.time()
+# stan_out_4ind <- stan(file    = "Scripts/latent_size_4ind.stan",
+#                       data    = stan_data,
+#                       chains  = 4, cores = 4,
+#                       iter    = 3000, warmup = 1000,
+#                       control = list(adapt_delta = 0.95, max_treedepth = 12))
+# end <- Sys.time(); end - start
+# saveRDS(stan_out_4ind, file = "Rdata/latent_size_4ind_stan.rds")
+}
 ```
 
 ```{r}
 
 # Load in stan model
-#stan_out <- readRDS("Rdata/latent_size2_3indicator_stan.rds")
+# stan_out_3ind <- readRDS("Rdata/latent_size_3ind_stan.rds")
 
 # Extract posteriors on standardized scale
-posterior_b_temp_w_std <- rstan::extract(stan_out, pars = "b_temp_w")$b_temp_w
-posterior_b_temp_t_std <- rstan::extract(stan_out, pars = "b_temp_t")$b_temp_t
+post_w <- rstan::extract(stan_out_3ind, pars = "b_temp_w")$b_temp_w
+post_t <- rstan::extract(stan_out_3ind, pars = "b_temp_t")$b_temp_t
 
 # Scale factors from original (non-standardized) data
 sd_Wing   <- sd(Morph$Wing)
@@ -342,60 +353,44 @@ sd_Tarsus <- sd(Morph$Tarsus)
 sd_Temp   <- sd(Morph$Temp)
 
 # Backtransform to original scale
-b_temp_w_original <- posterior_b_temp_w_std * (sd_Wing   / sd_Temp)
-b_temp_t_original <- posterior_b_temp_t_std * (sd_Tarsus / sd_Temp)
+b_temp_w_original <- post_w * (sd_Wing   / sd_Temp)
+b_temp_t_original <- post_t * (sd_Tarsus / sd_Temp)
 
-# Posterior summaries
-mean_w <- mean(b_temp_w_original)
-ci_w   <- quantile(b_temp_w_original, c(0.025, 0.975))
-mean_t <- mean(b_temp_t_original)
-ci_t   <- quantile(b_temp_t_original, c(0.025, 0.975))
+mean_w <- mean(b_temp_w_original); ci_w <- quantile(b_temp_w_original, c(0.025, 0.975))
+mean_t <- mean(b_temp_t_original); ci_t <- quantile(b_temp_t_original, c(0.025, 0.975))
 
-cat("Posterior summary of b_temp_w (Wing) on original scale:\n")
-cat("Mean:", round(mean_w, 4), "\n")
-cat("95% CI: [", round(ci_w[1], 4), ", ", round(ci_w[2], 4), "]\n")
-cat("True value (B_temp_w):", B_temp_w, "\n\n")
+cat("b_temp_w (Wing):\n")
+cat("  Mean:", round(mean_w, 4), "  95% CI [", round(ci_w[1], 4), ",", round(ci_w[2], 4), "]  true =", B_temp_w, "\n\n")
+cat("b_temp_t (Tarsus):\n")
+cat("  Mean:", round(mean_t, 4), "  95% CI [", round(ci_t[1], 4), ",", round(ci_t[2], 4), "]  true =", B_temp_t, "\n\n")
 
-cat("Posterior summary of b_temp_t (Tarsus) on original scale:\n")
-cat("Mean:", round(mean_t, 4), "\n")
-cat("95% CI: [", round(ci_t[1], 4), ", ", round(ci_t[2], 4), "]\n")
-cat("True value (B_temp_t):", B_temp_t, "\n\n")
-
-# Stan diagnostic summaries
-rstan::summary(stan_out, pars = c("b_temp_w", "b_temp_t", "sigma_size",
-                                   "lambda_wing", "lambda_tarsus"))$summary
+rstan::summary(stan_out_3ind, pars = c("b_temp_w", "b_temp_t",
+                                        "sigma_size", "lambda_wing", "lambda_tarsus",
+                                        "sigma_mass"))$summary
 ```
 
 ```{r}
 
-# Posterior plots for both Allen's rule coefficients
-df_post <- data.frame(
-  b_temp    = c(b_temp_w_original, b_temp_t_original),
-  Parameter = rep(c("Wing (true = 0.3)", "Tarsus (true = 0.15)"),
-                  each = length(b_temp_w_original))
-)
+# Helper: posterior density for one parameter
+plot_posterior <- function(samples, true_val, label) {
+  df <- data.frame(b_temp = samples)
+  ggplot(df, aes(x = b_temp)) +
+    geom_density(fill = "steelblue", alpha = 0.6) +
+    geom_vline(xintercept = mean(samples), linetype = "solid",  color = "red",   linewidth = 1) +
+    geom_vline(xintercept = true_val,      linetype = "dashed", color = "black", linewidth = 1) +
+    labs(x = label, y = "Posterior density") +
+    theme_minimal()
+}
 
-true_vals <- data.frame(
-  Parameter  = c("Wing (true = 0.3)", "Tarsus (true = 0.15)"),
-  true_value = c(B_temp_w, B_temp_t),
-  post_mean  = c(mean_w, mean_t)
-)
+p_w <- plot_posterior(b_temp_w_original, B_temp_w, paste0("b_temp_w: Wing (true = ", B_temp_w, ")"))
+p_t <- plot_posterior(b_temp_t_original, B_temp_t, paste0("b_temp_t: Tarsus (true = ", B_temp_t, ")"))
+# For 4-indicator model, add:
+# p_bl <- plot_posterior(b_temp_bl_original, B_temp_bl, paste0("b_temp_bl: BL (true = ", B_temp_bl, ")"))
 
-ggplot(df_post, aes(x = b_temp)) +
-  geom_density(fill = "steelblue", alpha = 0.6) +
-  geom_vline(data = true_vals, aes(xintercept = post_mean),
-             linetype = "solid", color = "red", linewidth = 1) +
-  geom_vline(data = true_vals, aes(xintercept = true_value),
-             linetype = "dashed", color = "black", linewidth = 1) +
-  facet_wrap(~Parameter, scales = "free") +
-  labs(x = "Temperature effect on appendage length",
-       y = "Posterior density",
-       title = "Posterior distributions of Allen's rule coefficients",
-       subtitle = "Red: posterior mean | Black dashed: true value") +
-  theme_minimal()
+ggpubr::ggarrange(p_w, p_t, nrow = 1)
 
 # Trace plots for diagnostics
-plot(stan_out, ask = FALSE)
+plot(stan_out_3ind, ask = FALSE)
 ```
 
 ```{r}
