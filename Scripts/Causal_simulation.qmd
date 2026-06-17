@@ -123,7 +123,7 @@ We model size as a function of temperature, mass as being influenced by size (i.
 
 N <- 5000
 Temp <- rnorm(N, 1, .3) # Average 1 degree C increase
-Size <- rnorm(N, 4 - (.4 * Temp), .5) # Unitless latent size
+Size <- rnorm(N, 4 - (.6 * Temp), .5) # Unitless latent size
 
 ## Morphology
 # Mass
@@ -135,26 +135,29 @@ M2 <- rnorm(N, Mass, 1)
 M3 <- rnorm(N, Mass, 1)
 
 # Wing length
-error_w <- rnorm(N, 0, .5)
+error_w <- rnorm(N, 0, 3)
 B_temp_w <- 0.6 # Estimand
-Wing <- 168 + (B_temp_w * Temp) + (2 * Size) + error_w # Wing length in mm
+Wing <- 168 + (B_temp_w * Temp) + (3 * Size) + error_w # Wing length in mm
 hist(Wing)
 
 # Tarsus
-error_t <- rnorm(N, 0, 0.15)
+error_t <- rnorm(N, 0, 1)
 B_temp_t <- 0.3 # Estimand
-Tarsus <- 40 + (B_temp_t * Temp) + (.8 * Size) + error_t
+Tarsus <- 40 + (B_temp_t * Temp) + (1.2 * Size) + error_t
 hist(Tarsus)
 
 # Body length
-error_bl <- rnorm(N, 0, 1)
+error_bl <- rnorm(N, 0, 5)
 B_temp_bl <- 0.4 # Estimand
-BL <- 255 + (B_temp_bl * Temp) + (3 * Size) + error_bl # Body length in mm
+BL <- 255 + (B_temp_bl * Temp) + (4 * Size) + error_bl # Body length in mm
 hist(BL)
 
 # Combine into a tbl
 Morph <- tibble(Temp, Size, Wing, Tarsus, BL, Mass, M1, M2, M3)
-Morph_s <- Morph %>% mutate(across(where(is.numeric), \(col) as.numeric(scale(col))))
+Morph_s <- Morph %>% 
+  mutate(across(
+    where(is.numeric), \(col) as.numeric(scale(col))
+    ))
 ```
 
 Examine the simulated correlations - notice that temperature is negatively correlated with size, length, and mass, whereas the morphological relationships are positively correlated.
@@ -301,9 +304,66 @@ While path analysis has occasionally been used in studies of Allen’s rule in r
 
 ```{r}
 
+Morph_obs <- Morph_s %>% select(-Size)
+
+library(lavaan)
+sem_model <- '
+Size =~ 1*Mass + Wing + Tarsus
+Size ~ Temp
+Wing ~ Temp 
+Tarsus ~ Temp
+'
+Fit <- sem(sem_model, data = Morph_obs, estimator = "ML")
+Fit_allen <- tidy(Fit) %>% 
+  filter(term %in% c("Wing ~ Temp","Tarsus ~ Temp")) %>% 
+  select(term, estimate, std.error)
+
+# Scale factors from original (non-standardized) data
+sd_Wing   <- sd(Morph$Wing)
+sd_Tarsus <- sd(Morph$Tarsus)
+sd_Temp   <- sd(Morph$Temp)
+```
+
+```{r}
+
+Fit_allen_p <- Fit_allen %>%
+  mutate(Trait = c("Wing", "Tarsus"),
+  scale_factor = c(sd_Wing / sd_Temp,
+                   sd_Tarsus / sd_Temp),
+  beta_true = c(B_temp_w,
+                B_temp_t)) %>%
+  mutate(
+    beta_raw = estimate * scale_factor,
+    se_raw   = std.error * scale_factor,
+    lower    = beta_raw - 1.96 * se_raw,
+    upper    = beta_raw + 1.96 * se_raw
+  )
+
+ggplot(Fit_allen_p,
+       aes(x = Trait, y = beta_raw)) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  geom_errorbar(aes(ymin = lower,
+                    ymax = upper),
+                width = 0.15) +
+  geom_point(size = 3) +
+  geom_point(aes(y = beta_true),
+             shape = 4,
+             size = 4,
+             stroke = 1.2) +
+  labs(
+    x = NULL,
+    y = expression(hat(beta)[Temp]~"(back-transformed)"),
+    title = "Recovered vs. true temperature effects",
+    subtitle = "Points = posterior means; X = true values; bars = approximate 95% intervals"
+  ) +
+  theme_bw()
+```
+
+```{r}
+
 library(rstan)
 
-# BL is included so this same list works for both 3- and 4-indicator models.
+# BL is included so this same list works for both 3- and 4- indicator models.
 # Stan silently ignores list elements not declared in the model's data block.
 stan_data <- list(
   N      = nrow(Morph_s),
@@ -314,20 +374,33 @@ stan_data <- list(
   BL     = Morph_s$BL
 )
 
-# --- 3-indicator model (Mass + Wing + Tarsus) ---
+# --- 3-indicator model, z_size marginalized (Woodbury identity) ---
+# Reduces parameter space from N+13 to 13; should eliminate max_treedepth saturation
+if(FALSE){
 start <- Sys.time()
-stan_out_3ind <- stan(file    = "Scripts/latent_size_3ind.stan",
+stan_out_3ind <- stan(file    = "Scripts/latent_size_3ind_marginal.stan",
                       data    = stan_data,
                       chains  = 4, cores = 4,
                       iter    = 2000, warmup = 1000,
                       control = list(adapt_delta = 0.95, max_treedepth = 12))
-end <- Sys.time()
-end - start
-saveRDS(stan_out_3ind, file = "Rdata/latent_size_3ind_stan.rds")
+end <- Sys.time(); end - start
+saveRDS(stan_out_3ind, file = "Rdata/latent_size_marginal_noise.rds")
+}
+
+# --- 3-indicator model, non-centered z_size (original for comparison) ---
+#if(FALSE){
+  start <- Sys.time()
+  stan_out_3ind <- stan(file    = "Scripts/latent_size_3ind.stan",
+                        data    = stan_data,
+                        chains  = 4, cores = 4,
+                        iter    = 4000, warmup = 2000,
+                        control = list(adapt_delta = 0.95, max_treedepth = 12))
+  end <- Sys.time(); end - start
+  saveRDS(stan_out_3ind, file = "Rdata/latent_size_3ind_stan_noise_real.rds")
+#}
 
 # --- 4-indicator model (Mass + Wing + Tarsus + BL) ---
-if(FALSE){
-#start <- Sys.time()
+# start <- Sys.time()
 # stan_out_4ind <- stan(file    = "Scripts/latent_size_4ind.stan",
 #                       data    = stan_data,
 #                       chains  = 4, cores = 4,
@@ -335,22 +408,16 @@ if(FALSE){
 #                       control = list(adapt_delta = 0.95, max_treedepth = 12))
 # end <- Sys.time(); end - start
 # saveRDS(stan_out_4ind, file = "Rdata/latent_size_4ind_stan.rds")
-}
 ```
 
 ```{r}
 
 # Load in stan model
-# stan_out_3ind <- readRDS("Rdata/latent_size_3ind_stan.rds")
+#stan_out_3ind <- readRDS("Rdata/latent_size_3ind_stan_noise.rds")
 
 # Extract posteriors on standardized scale
 post_w <- rstan::extract(stan_out_3ind, pars = "b_temp_w")$b_temp_w
 post_t <- rstan::extract(stan_out_3ind, pars = "b_temp_t")$b_temp_t
-
-# Scale factors from original (non-standardized) data
-sd_Wing   <- sd(Morph$Wing)
-sd_Tarsus <- sd(Morph$Tarsus)
-sd_Temp   <- sd(Morph$Temp)
 
 # Backtransform to original scale
 b_temp_w_original <- post_w * (sd_Wing   / sd_Temp)
