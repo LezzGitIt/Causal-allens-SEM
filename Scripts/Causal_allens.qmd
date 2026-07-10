@@ -27,57 +27,57 @@ editor_options:
 
 # Target journals
 
--   Target journal: Global Ecology and biogeography
+- Target journal: Global Ecology and biogeography
 
-    -   Manuscript category: Method
+  - Manuscript category: Method
 
-        -   Description: Presentation of new analytical techniques, new software, etc., or critical evaluation of methods in macroecology. Typically, these papers do not exceed ten printed pages. A structured abstract not longer than 300 words with the following headings should be used: Aim, Innovation, Main conclusions.
+    - Description: Presentation of new analytical techniques, new software, etc., or critical evaluation of methods in macroecology. Typically, these papers do not exceed ten printed pages. A structured abstract not longer than 300 words with the following headings should be used: Aim, Innovation, Main conclusions.
 
-    -   Category: Correspondence
+  - Category: Correspondence
 
-        -   Description: *GEB* welcomes short items of correspondence (typically 2000 words, plus a single-paragraph abstract not longer than 200 words) prompted by papers published in the journal, or occasionally other journals. Correspondence pieces will be sent to the critiqued authors for a response. Both the correspondence and the response are then sent out to review. The outcome of the review process may be that neither, only one or both items of the correspondence are published. All correspondence published on a topic will be in the same issue of the journal, with no further debate allowed.
+    - Description: *GEB* welcomes short items of correspondence (typically 2000 words, plus a single-paragraph abstract not longer than 200 words) prompted by papers published in the journal, or occasionally other journals. Correspondence pieces will be sent to the critiqued authors for a response. Both the correspondence and the response are then sent out to review. The outcome of the review process may be that neither, only one or both items of the correspondence are published. All correspondence published on a topic will be in the same issue of the journal, with no further debate allowed.
 
 # Outline
 
--   Multiple regression approach is common
+Key idea is that conditioning on mass in multiple regression can bias estimates of interest depending on the causal structure of the data-generating process. Treating body size as a latent variable that 'causes' mass and appendage length is a solution that works irrespective of the untestable data-generating process
 
-    -   Could include lit review here to show that most authors are conditioning on mass without thinking about the causal model ahead of time
+- Multiple regression approach is common
 
--   Establish that this is a causal question and we must approach the question with causal models
+  - Could include lit review here to show that most authors are conditioning on mass without thinking about the causal model ahead of time
 
--   Terminology - absolute vs relative; direct vs total
+- Establish that this is a causal question and we must approach the question with causal models
 
--   Show that we want the direct effect of temperature on appendage, not the total effect
+- Terminology - absolute vs relative; direct vs total effect
 
--   Evidence supporting the co-evolution of mass and appendage size, nearly impossible to determine causality. The whole argument rests on this being true.. Otherwise can just include mass and be done with it.
+- Show that we want the direct effect of temperature on appendage, not the total effect
 
--   Mass as a collider
+- Evidence supporting the co-evolution of mass and appendage size, nearly impossible to determine causality. The whole argument rests on this being true.. Otherwise can just include mass and be done with it.
 
--   Solution: Size as a latent variable
+- Solution: Size as a latent variable
 
--   Discuss what determines the extent of the bias inflicted by blindly conditioning on mass
+- Discuss what determines the extent of the bias inflicted by blindly conditioning on mass
 
-    -   How good of a proxy mass is for size
+  - How good of a proxy mass is for size
 
-    -   Strength of direct Temp -\> Length and indirect Temp -\> Mass → Length relationships
+  - Strength of direct Temp -\> Length and indirect Temp -\> Mass → Length relationships
 
--   Show a full complexity example with both unknowns and latent size
+- Show a full complexity example with both unknowns and latent size
 
-    -   Real biological systems likely have further complications
+  - Real biological systems likely have further complications
 
-    -   Severity of the bias additionally depends on how strongly unknown influences both Mass and Length
+  - Severity of the bias additionally depends on how strongly unknown influences both Mass and Length
 
--   Discussion
+- Discussion
 
-    -   There is no analytical rule that will fit all situations. Instead, we must draw out our causal assumptions and structure our analysis accordingly
+  - There is no analytical rule that will fit all situations. Instead, we must draw out our causal assumptions and structure our analysis accordingly
 
-        -   Make your assumptions transparent (explicit)
+    - Make your assumptions transparent (explicit)
 
-    -   With that said, treating size as latent should become the default as it solves several issues simultaneously
+  - With that said, treating size as latent should become the default as it solves several issues simultaneously
 
-    -   Measurement error amplifies collider bias
+  - Measurement error amplifies collider bias
 
-    -   If temperature makes organisms smaller and there is positive allometry between mass and appendage (true in most systems), the bias from conditioning on mass will be negative. This suggests that we have underestimated the extent that organisms are shape-shfiting in response to climate change / temperature gradients.
+  - If temperature makes organisms smaller and there is positive allometry between mass and appendage (true in most systems), the bias from conditioning on mass will be negative. This suggests that we have underestimated the extent that organisms are shape-shfiting in response to climate change / temperature gradients.
 
 # Background
 
@@ -92,7 +92,7 @@ This has been termed the 'multiple regression' approach [@rydingMultipleRegressi
 
 # Do we need causal inference?
 
-In studies examining temperature's impact on morphology, the goal of inference is often to predict how species may respond in future climates that are warmer or drier. This is particularly true in studies that examine morphological change through time, but even studies assessing Allen's rule across space frequently discuss the implications of their findings for future climate change [e.g., @skinnerEnvironmentalGeographicConditions2025]. However, the relationship between temperature and morphology is often described using linear regression or other purely associational statistical models that are inherently non-causal. As a result, there is often a mismatch between the inferential goals of these studies and the statistical procedures employed. Predictive models based on statistical associations can perform well as long as future climates resemble those under which the data were collected, but they may fail when climates, or the underlying ecological and evolutionary processes linking temperature to morphology, change in unprecedented ways. Our interest here is therefore explicitly causal: we seek to understand how morphology would respond if temperature itself were altered, independent of the many factors that co-vary with climate. Causal inference formalizes this distinction by focusing on intervention rather than association, allowing us to estimate the consequences of changing temperature while conceptually severing pathways that could otherwise generate spurious relationships, such as those arising from land-use change or other processes that influence both climate and morphology.
+Ecology needs a causal overhaul [@franksEcologyNeedsCausal2025]. In studies examining temperature's impact on morphology, the goal of inference is often to predict how species may respond in future climates that are warmer or drier. This is particularly true in studies that examine morphological change through time, but even studies assessing Allen's rule across space frequently discuss the implications of their findings for future climate change [e.g., @skinnerEnvironmentalGeographicConditions2025]. However, the relationship between temperature and morphology is often described using regression or other purely associational techniques. Without specifying the assumed causal relationships these associations are at best difficult to interpret, and at worst may be biased. As a result, there is often a mismatch between the inferential goals of these studies and the statistical procedures employed. Predictive models based on statistical associations can perform well as long as future climates resemble those under which the data were collected, but they may fail when climates, or the underlying ecological and evolutionary processes linking temperature to morphology, change in unprecedented ways. Our interest here is therefore explicitly causal: we seek to understand how morphology would respond if temperature itself were altered, independent of the many factors that co-vary with climate. Causal inference formalizes this distinction by focusing on intervention rather than association, allowing us to estimate the consequences of changing temperature while conceptually severing pathways that could otherwise generate spurious relationships, such as those arising from land-use change or other processes that influence both climate and morphology.
 
 # Absolute or relative?
 
@@ -166,12 +166,16 @@ It is necessary to briefly discuss terminology. In a causal modeling framework, 
 ```{r}
 #| label: fig-default-dag
 #| fig-cap: Researchers often suggest that we must control for body size when addressing Allen's rule, which implies the following DAG. The orange circle is our exposure variable and the teal circle is our outcome variable, and the arrow connecting them is the relationship we are interested in. 
+#| fig-pos: 'H'
 
 # The 'default' DAG, what is assumed by the standard mass as a covariate approach
 dag_def <- create_dag(mass_pred = Temp, length_pred = Temp + Mass)
 
 # Plot
 plot_dag(dag_def)
+
+markov_equivalents <- equivalentDAGs(dag_def)
+#purrr::map(markov_equivalents, ggdag)
 ```
 
 Here the arrow connecting temperature and appendage length represents the relationship we are interested in, but only after controlling for body mass (i.e., relative appendage length). This is equivalent to the direct effect of $Temperature \rightarrow Appendage$, which requires conditioning on mass. Looking at the adjustment set implied by the following DAG we can see that the only variable we need to condition on is mass.
@@ -197,6 +201,7 @@ So if we're after the direct effect of temperature on appendage length should we
 ```{r}
 #| label: fig-shared-temp
 #| fig-cap: A statistical association between mass and length doesn't necessarily mean that you must control for mass in your model. Indeed, if temperature influences both length and mass this will create a statistical association, but length and mass are independent if you condition on temperature. 
+#| fig-pos: 'H'
 
 no_corr_dag <- create_dag(mass_pred = Temp, length_pred = Temp)
 
@@ -222,7 +227,8 @@ Alternative causal assumptions show why blindly conditioning on mass can be prob
 
 ```{r}
 #| label: fig-dag-rev
-#| fig-cap: If appendage length influences mass then mass can act as a collider variable biasing our estimand of interest.
+#| fig-cap: If appendage length drives changes in mass (instead of mass driving changes in appendage length), then mass acts as a collider variable biasing ourestimand of interest.
+#| fig-pos: 'H'
 
 # What if we reverse the causal arrow on mass and length?
 dag_rev <- create_dag(mass_pred = Temp + Length, length_pred = Temp)
@@ -235,7 +241,7 @@ Even if you don't find the above hypothetical scenario convincing, there are oth
 
 ```{r}
 #| label: fig-dag-unk
-#| fig-cap: Conditioning on mass opens up a backdoor path between temperature and length through the unknown variable 'Unk'. This creates a spurious statistical association between 'Temp' and 'Unk' (which were previously independent), and that association propagates onto Length.
+#| fig-cap: If we cannot determine the causal direction between mass and appendage, then conditioning on mass opens up a backdoor path between temperature and length through the unknown variable 'Unk'. This creates a spurious statistical association between 'Temp' and 'Unk' (which were previously independent), and that association propagates onto Length.
 #| fig-pos: 'H'
 
 # Prey size (unknown) could be latent because we can’t know exactly how big prey were, but can use things like the fossil record to estimate it.
@@ -291,18 +297,20 @@ We must condition on size to achieve an unbiased estimate of the direct effect o
 
 As the literature review shows, \~80% of studies have used the multiple regression approach to address Allen's rule. Assuming that @fig-dag-size encompasses the true causal relationships, what determines the extent of bias in the literature? And will estimates always be negatively biased?
 
--   How good of a proxy mass is for body size
+- How good of a proxy mass is for body size
 
--   Extent of measurement error in mass
+- Extent of measurement error in mass
 
--   Strength of direct Temp -\> Length and indirect Temp -\> Mass → Length relationships
+- Strength of direct Temp -\> Length and indirect Temp -\> Mass → Length relationships
 
 # Full complexity example
 
 Biological systems are overwhelmingly complex. In reality, it is likely that both temperature and unknown forces (e.g., prey size in our previous example) causally influences size and length.
 
 ```{r}
-#| label: dag-full-complex
+#| label: fig-dag-full-complex
+#| fig-cap: A more biologically realistic conceptual model where both temperature and unknown forces influence size and appendage length.
+#| fig-pos: 'H'
 
 dag_full_complex <- create_dag(
   mass_pred   = Size,
@@ -360,13 +368,19 @@ plot_dag(dag_phylogeny)
 
 # Discussion
 
--   Causal modeling framework requires that we make our assumptions transparent (explicit)
+- Causal modeling framework requires that we make our assumptions transparent (explicit)
 
--   Measurement error amplifies collider bias
+- Measurement error amplifies collider bias
 
--   One ‘problem’ with this is we model mass and length apart from each other. If both increase or decrease, how do we know if relative length has increased or decreased (i.e. we also want to know what happens to overall body shape, body plan)? And importantly, what implications this has for thermoregulation? We must do more involved modeling, it’s not as simple as understanding whether the ratio increased or decreased
+- One ‘problem’ with this is we model mass and length apart from each other. If both increase or decrease, how do we know if relative length has increased or decreased (i.e. we also want to know what happens to overall body shape, body plan)? And importantly, what implications this has for thermoregulation? We must do more involved modeling, it’s not as simple as understanding whether the ratio increased or decreased
+
+- Causal modeling workflows (CITE Dudney et al, Franks et al, Arif & Macneil 2022)
+
+- Causal inference is challenging, but the alternative is.. Future of ecology depends on it
 
 CAUSAL INFERENCE IS NOT MECHANISM
+
+# References
 
 # Extras (ignore)
 
