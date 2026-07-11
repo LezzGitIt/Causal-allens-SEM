@@ -1,0 +1,17 @@
+$if(title)$
+\title{$title$}
+$endif$
+
+$if(subtitle)$
+\subtitle{$subtitle$}
+$endif$
+
+$for(by-author)$
+  \author[$for(by-author.affiliations)$$index$$sep$, $endfor$]{$by-author.name.literal$$if(by-author.attributes.corresponding)$*$endif$}
+$endfor$
+
+$for(unique-affiliations)$
+  \affil[$index$]{$unique-affiliations.name$$if(unique-affiliations.city)$, $unique-affiliations.city$$endif$$if(unique-affiliations.state)$, $unique-affiliations.state$$endif$}
+$endfor$
+
+\date{$date$}

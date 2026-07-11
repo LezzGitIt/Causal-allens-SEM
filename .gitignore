@@ -6,7 +6,60 @@
 .RData
 .RDataTmp
 
+# Derived/ is entirely regenerable output — nothing here is committed. Every
+# intermediate is rebuilt by running the pipeline (00-04, Fig11) from the raw data,
+# which is cited in the README. Includes the multi-GB Stan fits under Derived/Rdata/.
+Derived/
+Rplots.pdf
+
+# Rendered manuscript output (the "Rendered trick": output-dir + post-render flatten).
+Rendered/
+
+# rstan auto_write compiles the Stan model next to the .stan file.
+Scripts/*.rds
+
+# User-specific folders
+Journal_submissions/*
+Assumptions_check/*
+Feedback/*
+.posit/
+
+# Local-only working notes (kept on disk, never published)
+CLAUDE.md
+Project_notes.md
+
+# Suppfiles: bibliography, CSL, and title template are needed to render the
+# manuscript from a clean clone, so they are tracked.
+Suppfiles/*
+!Suppfiles/*.bib
+!Suppfiles/*.csl
+!Suppfiles/*.tex
+!Suppfiles/*.yml
+
+# Figures/ is entirely regenerable output — nothing committed. The manuscript embeds
+# these PNGs, so it renders only AFTER the pipeline (00-04, Fig11) has produced them.
+Figures/
+
+# elsevier extension (Quarto reinstalls via `quarto add quarto-journals/elsevier`)
+_extensions/*
+
+# Quarto/LaTeX byproducts anywhere under Scripts/ (the manuscript lives in Scripts/qmd/)
+Scripts/elsarticle*
+Scripts/*.spl
+# Quarto/LaTeX byproducts left beside the manuscript in Scripts/qmd/
+Scripts/qmd/*_files/
+Scripts/qmd/*_cache/
+Scripts/qmd/*.tex
+Scripts/qmd/*.log
+Scripts/qmd/*.aux
+Scripts/qmd/*.toc
+Scripts/qmd/*.spl
+Scripts/qmd/*.cls
+Scripts/qmd/*.bst
+Scripts/qmd/*.pdf
+
 # User-specific files
+*DS_Store
 .Ruserdata
 
 # Example code in package build process
@@ -31,6 +84,7 @@ vignettes/*.pdf
 # knitr and R markdown default cache directories
 *_cache/
 /cache/
+Scripts/*_files/
 
 # Temporary files created by R markdown
 *.utf8.md
@@ -47,3 +101,5 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+/.quarto/

@@ -1,0 +1,25 @@
+## It seems like the yml file can control certain things (directories, toc, etc.) but doesn't work for other things (chunk_output_type). In summary, the _yml file is important still. 
+
+project:
+  type: default
+  execute-dir: project
+  output-dir: Rendered/
+format: 
+  pdf:
+    pdf-engine: lualatex
+    toc: true
+    toc-depth: 3 
+    author-affiliations: true
+    template-partials:
+      - Suppfiles/title.tex
+    include-in-header:
+      text: |
+        \usepackage[noblocks]{authblk}
+        \renewcommand*{\Authsep}{, }
+        \renewcommand*{\Authand}{, }
+        \renewcommand*{\Authands}{, }
+        \renewcommand\Affilfont{\small}
+editor_options:
+  chunk_output_type: console
+date: today
+date-format: long

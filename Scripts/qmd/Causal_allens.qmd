@@ -1,0 +1,289 @@
+---
+title: "Reevaluating Allen’s rule – a causal modeling perspective"
+number-sections: true
+execute:
+  echo: false
+  message: false
+  warning: false
+format: #docx
+  elsevier-pdf: 
+    toc: false
+    header-includes:
+      - |
+        \usepackage{fancyhdr}
+        \pagestyle{fancy}
+        \fancyhead[R]{Causal inference for Allen's rule}
+        \usepackage{makecell}
+        \usepackage{lineno}
+        \linenumbers
+        \usepackage[margin=1in]{geometry}
+        \setlength{\LTleft}{\fill}
+        \setlength{\LTright}{\fill}
+        \usepackage{tabularray}
+    journal:
+      name: Methods in Ecology and Evolution
+      formatting: preprint #doubleblind suppresses authors!, return to preprint
+      cite-style: authoryear
+bibliography: ../../Suppfiles/Morphology.bib
+link-citations: true
+csl: ../../Suppfiles/methods-in-ecology-and-evolution.csl
+knitr:
+  opts_chunk:
+    comment: "#>"
+    collapse: true
+editor_options:
+  chunk_output_type: console
+metadata-files: 
+  - ../../Suppfiles/abstract_keywords.yml
+  - ../../Suppfiles/authors.yml
+---
+
+{{< pagebreak >}}
+
+# Introduction
+
+Ecogeographical rules provide some of the strongest evidence that climate shapes animal morphology. Among these, Allen's rule predicts that animals inhabiting warmer environments possess proportionally longer appendages than those in colder environments, a pattern commonly attributed to selection on heat exchange because elongated appendages increase surface area relative to body volume. Although the rule has been documented across a wide range of endothermic taxa, statistical approaches for testing it remain remarkably inconsistent. Some studies analyse appendage-to-body-size ratios, whereas others regress appendage length on temperature while including body mass as a covariate [@rydingMultipleRegressionNot2025]. Both approaches seek to isolate the direct effect of temperature on appendage morphology after accounting for overall body size, yet they rely on fundamentally different assumptions about the relationship between body size, mass, and appendage dimensions.
+
+The need to account for body size arises because appendage dimensions tend to scale positively with overall organism size [@shingletonAllometryStudyBiological2010]. Larger individuals generally possess longer appendages irrespective of climate. Consequently, any environmental influence on body size, such as Bergmann's rule, may indirectly generate associations between temperature and appendage length that are unrelated to Allen's rule. Distinguishing these indirect effects (temperature $\rightarrow$ size $\rightarrow$ appendage length) from direct thermal influences (temperature $\rightarrow$ appendage length) is therefore central to understanding Allen's rule, and the ecological and evolutionary mechanisms underlying geographic variation in morphology more broadly.
+
+Despite broad agreement that body size should be controlled [@symondsItsAllRelative2025], considerably less attention has been given to what body size actually represents. In most empirical studies, observed body mass is treated as though it were synonymous with body size. This assumption is convenient because mass is routinely collected and often correlates strongly with linear morphological measurements. However, body mass is an imperfect representation of structural size. While mass generally scales proportionally with body volume, short-term variation in gut contents, hydration, reproductive condition, fat reserves, and measurement error all contribute to variation in body mass that is unrelated to the true (but latent) structural size. More fundamentally, body size itself is not directly observed but instead represents an underlying biological attribute reflected jointly by multiple morphological traits, including mass and appendage lengths. Treating a single noisy measurement as though it were the latent trait itself is at least imprecise, and may introduce bias when attempting to understand temperature-morphology relationships.
+
+These alternative interpretations correspond to distinct causal models. Under the traditional model, @fig-dag-comparison(a), mass is treated as a cause of appendage length, making adjustment for observed mass an appropriate means of estimating the direct effect of temperature on appendages. Under an alternative set of assumptions, @fig-dag-comparison(b), appendage length causes mass — making mass a collider whose conditioning opens a spurious backdoor path which attenuates the temperature coefficient toward zero. Finally, the latent size model, @fig-dag-comparison(c), posits that an unobservable factor body size jointly determines mass and appendage lengths, in which case one should condition on latent body size to obtain the direct Temp $\rightarrow$ appendage estimates. In this latter framework, observed mass functions as an imperfect indicator of latent size rather than its equivalent. Consequently, adjusting for observed mass does not fully account for variation in structural size and may distort estimation of the direct temperature effect, particularly when Bergmann's rule is strong or body mass is measured imprecisely.
+
+Structural equation models provide a natural framework for representing this biological view of body size. Rather than assuming that observed mass truly captures organismal size, latent variable models estimate body size from the covariance among multiple morphological indicators while simultaneously estimating direct environmental effects on individual traits. Such models have been widely used in psychology, sociology, and increasingly in ecology to estimate unobserved constructs, yet they have rarely been applied to the study of ecogeographical rules despite their close correspondence to the underlying biology.
+
+Here, I use causal simulations to evaluate alternative approaches for detecting Allen's rule under a biologically motivated latent body-size model. I compare three commonly used analytical approaches: appendage-to-mass ratios, multiple regression using observed mass as a covariate, and a latent structural equation model that estimates body size from shared variation among mass and multiple appendage measurements. By generating data from known causal processes spanning realistic combinations of Bergmann's rule strength, allometric scaling, and appendage-size relationships, I evaluate each method's ability to recover the true direct effect of temperature on appendage morphology. I further investigate how measurement error in body mass influences estimation and whether repeated mass measurements incorporated within the latent variable framework improve inference. My objective is not to advocate a universally superior statistical method, but rather to demonstrate that inference regarding Allen's rule depends critically on how body size is conceptualised and represented within the statistical model.
+
+![Three sets of causal assumptions about the relationship between temperature (Temp), body mass (Mass), and appendage lengths (App1 = appendage 1, App2 = appendage 2) specified as a directed acyclic graph (DAG). **(a) Traditional assumptions:** mass mediates temperature's effect on appendages; conditioning on mass in multiple regression recovers the unbiased direct effect. **(b) Mass as collider:** appendage length determines mass; conditioning on mass opens a spurious path, biasing the temperature coefficient. **(c) Latent body size model:** an unobserved size factor drives both mass and appendage lengths; conditioning on observed mass is an imperfect adjustment, inducing collider bias. In (c), size is latent (unobserved); all other nodes are observed. Arrows indicate direct causal effects. This paper simulates data under structure (c) and evaluates how well each methodological approach recovers the true direct temperature effect on Appendage1 and Appendage2.](../../Figures/dag_comparison.png){#fig-dag-comparison fig-pos="H"}
+
+# Methods
+
+## Causal simulation model
+
+I simulated morphological data under the biologically explicit causal model illustrated in @fig-dag-comparison(c). In this model, mean annual temperature ($T_i$) drives two ecologically distinct processes: Bergmann's rule, through its effect on a latent (unobserved) body size variable $S_i$; and Allen's rule, through direct effects on appendage lengths. Observed body mass $M_i$ and appendage lengths $A_{1i}$, $A_{2i}$ are each generated from latent size plus independent residuals, making $M_i$ a noisy proxy for $S_i$ rather than a cause of the appendages. The data-generating process is defined by the structural equations:
+
+$$\text{Temp}_i \sim \mathcal{N}(\mu_T,\, \sigma_T^2)$$
+
+$$\text{Size}_i \sim \mathcal{N}(\mu_S + \beta_S\, \text{Temp}_i,\; \sigma_S^2), \quad \beta_S < 0$$
+
+$$\log(\text{Mass}_i) = \bar{m} + \lambda_M \text{Size}_i + \varepsilon_{M,i}, \quad \varepsilon_{M,i} \sim \mathcal{N}(0,\sigma_M^2)$$
+
+$$\log(\text{App}_{1i}) = \bar{a}_1 + B_1\, \text{Temp}_i + \lambda_1\, \text{Size}_i + \varepsilon_{1,i}, \quad \varepsilon_{1,i} \sim \mathcal{N}(0,\sigma_1^2)$$
+
+$$\log(\text{App}_{2i}) = \bar{a}_2 + B_2\, \text{Temp}_i + \lambda_2\, \text{Size}_i + \varepsilon_{2,i}, \quad \varepsilon_{2,i} \sim \mathcal{N}(0,\sigma_2^2)$$
+
+where $\beta_S < 0$ encodes Bergmann's rule (larger individuals in colder environments), $\lambda_M$, $\lambda_{A1}$, and $\lambda_2$ are the loadings of mass and appendages on latent size, and $B_1$ and $B_2 = B_1$ are the direct Allen's rule effects (the target estimands; both appendages share the same direct thermal sensitivity in the current parameterisation). All residuals are mutually independent.
+
+Because $\text{Mass}_i$ is a descendant of $\text{Size}_i$ rather than a cause of the appendages, conditioning on it in a multiple regression of appendage on temperature opens a spurious path between temperature and body size given mass, introducing a negative bias in the estimated direct Allen's rule effect. This is collider bias: an adjustment for a common effect of two variables (temperature and the residuals shared by latent size) that induces a spurious association between them [@pearlCausality2009]. The magnitude of the bias is expected to increase with both the strength of Bergmann's rule ($|\beta_S|$) and the appendage–size loading ($\lambda$).
+
+## Simulation parameter grid
+
+Rather than specifying structural loadings ($\lambda$) and residual standard deviations ($\sigma$) directly, I parameterised the grid in terms of observable allometric statistics and solved for the structural parameters algebraically. For each combination of: (i) SMA allometric slope ($\alpha_{SMA} \in \{0.30, 0.45, 0.60\}$, representing the log-log scaling of appendage length with body mass), (ii) appendage–mass correlation ($r \in \{0.30, 0.50, 0.65\}$), (iii) direct Allen's rule effect ($B_1 = B_2 \in \{0.00, 0.02, 0.05, 0.07\}$ log mm °C$^{-1}$), and (iv) Bergmann's rule strength ($\beta_S \in \{-0.15, -0.27, -0.42\}$; corresponding to $r(\text{Mass},\, \text{Temperature}) \approx \{-0.30, -0.50, -0.65\}$), I derived the appendage loadings ($\lambda_1$, $\lambda_2$) and residual SDs ($\sigma_1$, $\sigma_2$) from the system of equations implied by the structural model. This algebraic solver guarantees that simulated data will match the target SMA slope and appendage–mass correlation in population expectations, accounting for both the indirect covariance path through latent size and the temperature-covariance term arising from Bergmann's rule. The full grid yielded $3 \times 3 \times 4 \times 3 = 108$ parameter combinations, which can be thought of as hypothetical species.
+
+Fixed parameters were: latent size SD $\sigma_S = 0.10$ and mass SD $\sigma_M = 0.10$ (both log-scale; approximately 10% coefficient of variation on the raw scale), temperature SD $\sigma_T = 0.3$, means $\bar{m} = \log(50)$ g, $\bar{a}_1 = \log(180)$ mm (Appendage 1), $\bar{a}_2 = \log(40)$ mm (Appendage 2). Appendage 2 was assigned biologically distinct allometric targets: a tighter coupling to latent body size $r_2 = r_1 + 0.08$ (but capped at 0.62 to keep correlations biologically realistic) and a slightly lower SMA slope ($\alpha_{SMA,2} = \alpha_{SMA,1} - 0.05$).
+
+I conducted several steps to ensure that the data from the simulated species were biologically plausible. First, I removed observations $\pm 2.5$ standard deviations from the mean for each morphological variable ($\sim 3$–4% of individuals removed per dataset) to remove implausibly large individuals (due to simulation on the log scale). I then screened the simulated data to ensure that hypothetical species had realistic appendage-mass and temperature-morphology correlations: $r(\text{Appendage},\, \text{Mass}) \in [0.25,\, 0.70]$, $r(\text{Appendage},\, \text{Temperature}) \in [-0.70,\, 0.00]$, and $r(\text{Mass},\, \text{Temperature}) \in [-0.70,\, 0.00]$, applied to both appendages independently. Appendage-mass [@youngfleshAbioticConditionsShape2022; @greenMassLengthResiduals2001; @goslerFieldDeterminationBody1998] and temperature-morphology [@ashtonPatternsWithinSpeciesBody2002; @ashtonBergmannsRuleValid2000] correlations were taken from the literature. Hypothetical species passing all five criteria were used in the methods comparison. This simulation approach produced morphological trait distributions that were biologically plausible (@fig-hist-raw-values).
+
+![Raw-scale distributions of body mass (g) and appendage lengths (mm) across all 91 biologically realistic parameter combinations ($N \approx 1{,}450$ individuals per combination after log-scale trimming at $\pm 2.5$ SD). Each line represents one simulated dataset. Log-scale intercepts were set to $\bar{m} = log(50)$ g, $\bar{a}_1 = log(180)$ mm, $\bar{a}_2 = log(40)$ mm.](../../Figures/Morphology_distributions.png){#fig-hist-raw-values fig-pos="H" width="100%"}
+
+## Analytical approaches
+
+I compared four approaches for estimating the direct temperature effect on appendage length ($\beta_1$ or $\beta_2$). One of these, the SLI, requires a choice of allometric exponent and is fitted with two (an isometric and an estimated exponent), so the four approaches yield five estimators in total. All methods operated on log-transformed mass and appendage measurements, and all variables were standardised (mean 0, SD 1) prior to fitting. Standardised coefficients were back-transformed to log mm °C$^{-1}$ (i.e., proportional change in appendage length per degree) by multiplying by $\hat{\sigma}_{\log(\text{appendage})} / \hat{\sigma}_\text{temperature}$, matching the units of the true simulation parameters $\beta_1$ and $\beta_2$.
+
+**Appendage/mass ratio.** The log-ratio $r_i = \log(\text{appendage}_i) / \log(\text{mass}_i)$ was regressed on standardised temperature via ordinary least squares (OLS). This approach adjusts for body size implicitly through the denominator but does not partition direct from indirect temperature effects on the appendage.
+
+**Standardised Length Index (SLI).** The SLI is a size-adjusted appendage length that rescales each individual's appendage to a common reference body mass using an allometric exponent $b$, applying the scaled-mass logic of @peigNewPerspectivesEstimating2009 to appendages rather than to mass \[CITE: Skinner in press\]. On the log scale used throughout this paper it is a linear size adjustment,
+
+$$\log(\text{SLI}_i) = \log(\text{appendage}_i) - b\, \log(\text{mass}_i),$$
+
+which is then regressed on temperature by OLS. The reference-mass constant enters additively and so drops out under standardisation, leaving the exponent $b$ as the only choice. The appendage/mass ratio is the special case $b = 1$. I evaluated two exponents: an isometric $b = 1/3$ (geometric similarity, length $\propto$ mass$^{1/3}$), and an estimated $b$ given by the standardised major axis (SMA) slope of $\log(\text{appendage})$ on $\log(\text{mass})$ within each hypothetical species. The SMA slope is used in preference to the OLS slope because mass is measured with error, which attenuates the OLS slope by a factor equal to the appendage–mass correlation. Like the ratio, the SLI adjusts for size using observed mass alone, and so does not separate the direct temperature effect from the indirect path through latent size; unlike the ratio, its exponent is matched to the observed allometry rather than fixed at one.
+
+**Multiple regression.** Log-transformed observed mass was included as a covariate in a multiple regression of log(appendage) on temperature and log(mass):
+
+$$\log(\text{appendage}_i) = \alpha + \beta_T \text{Temp}_i + \beta_M \log(\text{mass}_i) + \varepsilon_i$$
+
+This is equivalent to the approach described by @rydingShapeshiftingChangingAnimal2021, the most widely used method in empirical Allen's rule studies. The coefficient $\hat{\beta}_T$ is the target estimand.
+
+**Latent structural equation model (SEM).** I fitted a MIMIC (Multiple Indicators, Multiple Causes) model that treats body size as a latent variable $\xi_i$ jointly determined by temperature and identified from the shared variance among mass and both appendage measurements:
+
+$$\xi_i = \gamma\, \text{Temp}_i + \zeta_i$$
+
+$$\log(\text{Mass}_i) = \lambda_M\, \xi_i + \delta_{M,i}, \quad \lambda_M = 1 \text{ (scale constraint)}$$
+
+$$\log(\text{App}_{1i}) = \beta_1\, \text{Temp}_i + \lambda_1\, \xi_i + \delta_{1,i}$$
+
+$$\log(\text{App}_{2i}) = \beta_2\, \text{Temp}_i + \lambda_2\, \xi_i + \delta_{2,i}$$
+
+where $\gamma$ estimates Bergmann's rule, $\lambda_1$ and $\lambda_2$ are estimated loadings of the observed appendages on the latent size factor, and $\beta_1$, $\beta_2$ are the direct Allen's rule effects. The MIMIC model uses mass and both appendages to estimate latent size while simultaneously estimating the direct effect of temperature $\rightarrow$ appendage after accounting for body size. The model was fitted by maximum likelihood using the `lavaan` package \[CITE: Rosseel 2012\]. Because the latent size factor is estimated simultaneously with the direct temperature effects, this approach does not condition on observed mass and therefore avoids collider bias by design.
+
+## Measurement error analysis
+
+In practice, body mass is often measured with error due to equipment precision limits, and more importantly, short-term biological fluctuation (e.g., gut content, hydration state). To assess whether mass measurement error compounds collider bias, I generated a second set of datasets from the same realistic parameter grid ($N = 1{,}000$ per combination), adding independent Gaussian noise to each of $k$ repeat log-mass measurements:
+
+$$\log(\text{Mass}_{k,i}) \sim \mathcal{N}(\log(\text{Mass}_i),\; \sigma_{me}^2), \quad k = 1, 2, 3$$
+
+where $\log(\text{Mass}_i)$ is the true (but latent) log-mass and $\sigma_{me} = 0.10$ on the log scale (coefficient of variation $\approx 10$% at mean mass $\bar{m} = 50$ g, i.e., $\pm 5$ g SD at the mean). Each of the four analytical approaches was applied in two variants: an **oracle** variant using the noiseless latent mass $M_i$, and an **M1** variant using a single noisy weighing $M_{1,i}$. Contrasting the two variants of a given method isolates the additional cost of mass measurement error from the bias intrinsic to the estimator itself, which the oracle variant exposes even under perfect measurement. This yielded nine estimators in total:
+
+1.  **Multiple regression (true mass / M1):** the oracle establishes the irreducible collider bias remaining even with perfectly measured mass.
+2.  **SEM (true mass / M1):** latent SEM using $M_i$ or $M_{1,i}$ as the sole mass indicator.
+3.  **SEM (M1–M3):** hierarchical latent SEM using all three repeat measurements. A first-order factor recovers the latent true mass ($\text{Mass}_i =_\lambda \{\text{Mass}_{1i}, \text{Mass}_{2i}, \text{Mass}_{3i}\}$), absorbing measurement error into the repeat-mass residuals; a second-order factor then identifies body size ($\xi_i =_\lambda \{1 \cdot \text{Mass}_i, \text{App}_{1i}, \text{App}_{2i}\}$).
+4.  **Appendage/mass ratio (true mass / M1):** the log-ratio formed with $M_i$ or $M_{1,i}$ in the denominator.
+5.  **SLI, estimated exponent (true mass / M1):** the SMA exponent $b$ is re-estimated against whichever mass column the index uses, so the M1 variant inherits both the noisier size adjustment and the attenuated exponent that a field study would actually obtain.
+
+Comparing the oracle and M1 variants within each family quantifies the marginal cost of a single noisy measurement; comparing the SEM oracle and M1 variants against SEM (M1–M3) shows whether repeat measurements can separate $\sigma_{me}$ from $\sigma_M$ and from the size-factor variance.
+
+## Empirical application
+
+Simulation establishes that the latent SEM recovers the direct effect when the data are generated by the assumed causal process. Whether it is usable on real morphological data is a separate question, and one the simulation cannot answer: real datasets have modest per-species sample sizes, mass that is labile rather than merely imprecise, and appendages that may covary for reasons other than body size. I therefore applied the same estimators to three individual-level avian morphology datasets.
+
+### Datasets
+
+The three datasets comprise 95 species and 70,500 individuals in total. **Nightjars** (3 species; 1,141 individuals; 267–443 per species) contribute wing and tail lengths with body mass, and use WorldClim annual mean temperature as the predictor [@skinnerEnvironmentalGeographicConditions2025]. **Weeks et al. (2020)** (43 species; 51,762 individuals; 169–8,055 per species) contribute wing and tarsus lengths for North American migrants killed in building collisions in Chicago between 1979 and 2016 [@weeksSharedMorphologicalConsequences2020]; here the predictor is **collection year** rather than temperature, so its coefficients are per-year rates of temporal shape change and are not directly comparable in magnitude to the per-°C coefficients of the other two datasets. **Atlantic Forest birds** (49 species; 17,597 individuals; 151–1,152 per species) contribute wing and tarsus lengths with annual mean temperature, restricted to records after 1990 \[CITE: Hasui et al. 2018\].
+
+Analyses are per species. Mass and appendage measurements were log-transformed and then, along with the predictor, standardised to zero mean and unit variance within each species, so that all coefficients are on a common standardised scale. Species with fewer than 150 complete cases were dropped. Because the sign of the confounding the SEM exists to remove differs among species, I classified each species by the direction of its marginal mass and wing trends: **Bergmann's** (mass declines with the predictor, wing does not increase), **Inverse Bergmann's** (the reverse), **Mixed** (both traits change significantly in the same direction), or **Stable** (neither trend is significant). This yielded 35 Bergmann's, 24 Inverse Bergmann's, 9 Mixed, and 27 Stable species.
+
+### Per-species SEMs: maximum likelihood and Bayesian
+
+Each species was first fitted with the same three-indicator MIMIC model used in the simulation (`Size =~ 1*Mass + Wing + App2`; `Size ~ Temp`; `Wing ~ Temp`; `App2 ~ Temp`), by maximum likelihood in `lavaan`. Including the second appendage's own direct temperature path is not optional: omitting `App2 ~ Temp` when that appendage has its own Allen's effect forces the shared effect into the size factor and biases the wing coefficient downward.
+
+Maximum likelihood proved inadmissible on these data. Wherever the two appendages correlate more strongly with each other than either does with mass — which is common, because mass is labile — the appendage loadings inflate and the fit returns a **Heywood case**: standardised loadings above one, or negative residual variances. With only three indicators the single-factor model is just-identified ($df = 0$), so this misbehaviour cannot be diagnosed by a fit statistic.
+
+I therefore refitted each species with `blavaan` \[CITE: Merkle & Rosseel 2018\], which places positive-support priors on residual variances (making negative-variance solutions unreachable) and allows a prior on the appendage loadings. Mass remains the fixed unit-loading anchor; each appendage loading received a $\mathcal{N}(1, 0.25)$ prior, which regularises loadings toward isometry with the mass anchor without fixing them there. Because this prior is doing real work, I checked its influence with a sensitivity strip over $\mathcal{N}(1, 0.5)$, $\mathcal{N}(1, 0.25)$, and $\mathcal{N}(1, 0.15)$; weakly coupled and small-$N$ species move most as the prior tightens. Each species was fitted with 2 chains of 500 warmup and 500 sampling iterations, and estimates are posterior means with 95% highest-posterior-density (HPD) intervals.
+
+### Hierarchical Bayesian latent SEM
+
+Regularising each species independently treats 95 species as 95 unrelated problems, and it leaves the loading prior — rather than the data — deciding what "isometric" means. A hierarchical model instead **learns** the loading distribution from all species at once and lets small-$N$ species borrow strength from large-$N$ ones. I fitted all 95 species and three studies in a single Stan model \[CITE: Carpenter et al. 2017\].
+
+The model is parameterised with a **standardised** latent factor, meaning the size factor has variance fixed at one and the loadings $a_k$ are correlations of each indicator with latent size. For species $s$ with within-species standardised data,
+
+$$\text{Size}_i = \kappa_s\, T_i + \sqrt{1 - \kappa_s^2}\; \eta_i, \qquad \eta_i \sim \mathcal{N}(0, 1)$$
+
+$$y_{k,i} = a_{k,s}\, \text{Size}_i + d_{k,s}\, T_i + \varepsilon_{k,i}, \qquad \varepsilon_{k,i} \sim \mathcal{N}(0, \psi_{k,s})$$
+
+with $y = (\text{mass},\, \text{wing},\, \text{app2})$ and $d_{\text{mass}} = 0$ (mass anchors the factor and has no direct temperature path). Here $\kappa_s = \text{cor}(\text{Size}, T)$ is Bergmann's rule and $d_{\text{wing},s}$ is the estimand. Marginalising the per-individual latent size analytically leaves
+
+$$y_i \sim \text{MVN}(c_s T_i,\; \Sigma_s), \qquad \Sigma_s = (1 - \kappa_s^2)\, a_s a_s^\top + \text{diag}(\psi_s),$$
+
+with $c_s = (a_{\text{mass}}\kappa,\; a_{\text{wing}}\kappa + d_{\text{wing}},\; a_{\text{app2}}\kappa + d_{\text{app2}})_s$. Because this likelihood depends on the data only through per-species **sufficient statistics** — $n_s$, $\sum_i T_i^2$, $\sum_i T_i y_i$, and $\sum_i y_i y_i^\top$ — the model is fitted from 95 small cross-product summaries rather than from all 70,500 individual records, at no loss of information.
+
+Pooling is chosen to respect what is and is not comparable across studies. The **wing loading is pooled globally**: it is an allometric quantity, not a response to the predictor, so it means the same thing whether the predictor is temperature or year, and this is what allows the three small-$N$ nightjar species to borrow strength from the 92 passerines. The **Bergmann correlation** $\kappa$, the second-appendage loading, and both direct effects are pooled within study, which keeps the per-year effects of Weeks et al. separate from the per-°C effects of the other two datasets. The estimands are the per-species direct wing effects $d_{\text{wing},s}$ and the study-level population means $\mu_{d\text{w},g}$.
+
+Priors were weakly informative: $\mu_{a\text{w}} \sim \mathcal{N}(0.4, 0.3)$ for the pooled wing loading, $\mu_{d\text{w}} \sim \mathcal{N}(0, 0.5)$ for the study-level direct effects, $a_{\text{mass}} \sim \mathcal{N}(0.6, 0.25)$ truncated to $(0, 1)$ (which also fixes the sign of the factor), $\kappa \sim \mathcal{N}(\mu_\kappa, \tau_\kappa)$ truncated to $(-1, 1)$, and half-normal $\mathcal{N}(0, 0.3)$ and $\mathcal{N}(0, 0.7)$ priors on the pooling scales and residual variances respectively.
+
+Two implementation choices were decisive for convergence, and are worth recording because neither is obvious. First, the factor **must** be given unit variance rather than a freely estimated $\sigma_{\text{size}}$: with a free size SD, weakly coupled species drive $\sigma_{\text{size}} \to 0$ while their loadings run to infinity, a funnel that no amount of tuning repairs. Standardised loadings are bounded, so weak allometric coupling is simply $a_k \approx 0$ and is harmless. Second, the chains **must** be given sensible initial values (loadings near isometry, small pooling scales); with random inits the non-centred loadings start at extreme values that, combined with the large-$n$ species, saturate the gradient and every transition diverges. With both in place, four chains of 2,000 iterations (1,000 warmup; `adapt_delta` = 0.97, `max_treedepth` = 12) produced **zero divergent transitions** and $\hat{R} \le 1.003$ for all parameters.
+
+# Results
+
+## Parameter grid and biological realism
+
+Of 108 parameter combinations, 91 (84%) passed all five empirical correlation criteria (@fig-corr-diagnostic). Excluded combinations were concentrated at strong Allen's rule effects ($B = 0.07$ log mm °C$^{-1}$) combined with weak Bergmann's rule ($\beta_S = -0.15$), where the direct positive temperature–appendage path is strong enough to overcome the negative Bergmann-mediated indirect path, producing an overall positive appendage–temperature correlation inconsistent with published avian data [@ashtonPatternsWithinSpeciesBody2002]. The retained 91 combinations spanned all four Allen's rule levels, all three Bergmann's rule levels, and all nine allometric target combinations.
+
+![Induced correlations across the parameter grid. Each point is one parameter combination; green = passes all realism filters, red = fails at least one. Dashed lines show the empirical target range. Top row: Appendage 1 correlations plotted against $\lambda_1$. Bottom row: Appendage 2 correlations plotted against $\lambda_2$. Columns show Bergmann's rule strength ($\beta_S$).](../../Figures/fig_corr_diagnostic.png){#fig-corr-diagnostic fig-pos="H" width="100%"}
+
+## Bias in traditional approaches
+
+Under the simulated causal structure, the multiple regression approach produced negatively biased estimates of the direct temperature effect, while the appendage/mass ratio was positively biased (@fig-methods-comparison). Multiple regression estimates were consistently deflated toward zero and, under many realistic parameter combinations, crossed below zero even when the true direct effect was positive (e.g., $\beta = 0.02$ or $0.05$ log mm °C$^{-1}$). In the absence of a true Allen's rule signal ($\beta = 0$), multiple regression estimates were systematically negative, reflecting the spurious association between temperature and latent body size that is induced when conditioning on observed mass. The appendage/mass ratio was biased in the opposite direction: because Bergmann's rule reduces both log(mass) and log(appendage) in warmer populations, but mass scales more strongly with latent body size (larger $\lambda_M$), the denominator of the ratio falls proportionally more than the numerator, inflating the ratio and producing positive temperature coefficients even when no direct Allen's rule effect is present. The latent SEM produced estimates centred on the true direct effect (green dashed line) across all conditions.
+
+The two SLI variants fell between these extremes, and their ordering follows directly from how well the chosen exponent matches the true allometry. The SLI with an estimated (SMA) exponent had a mean absolute bias of $0.025$ log mm °C$^{-1}$, roughly a third that of the ratio ($0.073$) and less than half that of multiple regression ($0.055$); the isometric SLI was intermediate ($0.035$). Both SLI variants nonetheless retained a systematic tilt across Allen's rule strengths — positively biased when the true effect was zero and negatively biased when it was strong — because a fixed size adjustment based on observed mass cannot distinguish the direct from the size-mediated path regardless of which exponent is used. Only the latent SEM was centred on the true effect at every level (mean absolute bias $0.009$).
+
+The degree of bias in classical approaches depended strongly on Bergmann's rule strength. When $|\beta_S|$ was small (light blue points in @fig-methods-comparison), bias was modest; as $|\beta_S|$ increased (dark red points), classical method estimates fell progressively further below the true effect. The latent SEM was unaffected by Bergmann's rule strength: because it explicitly estimates the latent size \~ temperature path (the $\gamma$ parameter), it correctly attributes the indirect temperature–size–appendage signal to the Bergmann's mechanism and does not confound it with the direct Allen's rule path.
+
+![Temperature coefficients (log mm °C$^{-1}$) from the four approaches applied to causal simulation data, shown as five estimators because the SLI is fitted with two exponents: the appendage/mass ratio, the SLI with an isometric ($b = 1/3$) and an SMA-estimated exponent, mass as a covariate in multiple regression, and the latent SEM. Each point is one parameter combination from the realistic subset; boxes show the interquartile range. Columns correspond to increasing strength of the simulated direct Allen's rule signal ($\beta_1 = \beta_2 \in \{0.00, 0.02, 0.05, 0.07\}$ log mm °C$^{-1}$; both appendages share the same direct thermal sensitivity). The dashed green line marks the true direct effect; a perfect estimator centres on this line. Points are coloured by Bergmann's rule strength ($\beta_S$).](../../Figures/fig_methods_comparison.png){#fig-methods-comparison fig-pos="H" width="100%"}
+
+## Effect of appendage–size loading on estimation accuracy
+
+The appendage–size loading $\lambda_A$ had contrasting effects on the two method families (@fig-lambda-influence). For the multiple regression approach, increasing $\lambda_A$ amplified the indirect temperature–size–appendage path, increasing the magnitude of the collider bias and shifting estimates further below the true direct effect. This is expected: the indirect path through latent size has strength proportional to $\beta_S \cdot \lambda$, so a larger loading produces a stronger confound when conditioning on the imperfect proxy $\text{Mass}_i$. The estimation accuracy slightly improved at the highest values of $\lambda_A$, likely because... TO DO, WHY?
+
+For the latent SEM, increasing $\lambda_A$ slightly improved the estimation of $\beta_T$ at first and then had little effect. Low $\lambda_A$ values signify that appendages contribute little information to the estimation of latent size, increasing the uncertainty with which $\lambda_A$ is estimated. This uncertainty propogates to the indirect path of temperature $\rightarrow$ size $\rightarrow$ appendage, causing the mean $\beta_T$ estimate to increase away from the true effect. When the loading of appendage on latent body size increases, the model stabilized and correctly estimated $\beta_T$.
+
+![Effect of appendage–size loading ($\lambda$) on estimated temperature coefficients (log mm °C$^{-1}$) from the latent SEM and the multiple regression approach. $\lambda$ is the appendage–size loading for the row appendage (i.e., $\lambda_1$ for Appendage 1, $\lambda_2$ for Appendage 2). The green dashed line marks the true direct effect. Points are hypothetical species; lines are loess smooths with 95% confidence bands.](../../Figures/fig_lambda_influence.png){#fig-lambda-influence fig-pos="H" width="100%"}
+
+## Effect of mass measurement error
+
+When mass was measured with error ($\sigma_{me} = 0.10$ on the log scale), both collider bias and measurement noise degraded the classical estimates, while the latent SEM remained robust (@fig-covariate-comparison). Because each method appears in both an oracle and an M1 variant, the figure separates two things that are usually confounded: the bias a method carries even with perfectly measured mass (the position of its oracle boxplot relative to the true-effect line) and the additional cost of measurement error (the shift from oracle to M1).
+
+The two size-adjustment indices behave very differently despite sharing a functional form. The **appendage/mass ratio** ($b = 1$) was strongly positively biased under both variants — a median bias of $+0.072$ log mm °C$^{-1}$ with true mass and $+0.056$ with M1, averaged over Allen's rule strengths — because forcing $b = 1$ over-corrects for a size factor whose true appendage exponent is well below one. The **SLI with an estimated exponent** was, by contrast, nearly unbiased with true mass (mean absolute bias $0.023$), since the SMA slope matches the appendage's actual allometry. Its M1 variant remained close to the truth on average ($0.024$) but acquired a systematic downward bias that grew with the strength of the true Allen's effect ($-0.001$ at $\beta = 0$; $-0.028$ at $\beta = 0.07$): measurement error attenuates the SMA exponent, so the index under-corrects for size in exactly the regime where size and temperature are most entangled. Notably, the ratio moved *toward* the truth under measurement error while the SLI moved *away* from it — the noise attenuates the effective size adjustment in both, which happens to partially cancel the ratio's over-correction.
+
+For the multiple regression approach, switching from oracle to M1 produced modest additional downward bias ($-0.057$ to $-0.074$ mean absolute bias), indicating that measurement error compounds but does not dominate the collider-induced deflation. The gap between the multiple regression oracle and the SEM oracle — present across all Allen's rule strengths — confirms that collider bias is the primary source of estimation failure, and that it persists even under the hypothetical best case of perfectly measured mass.
+
+The latent SEM was the only approach that was near-unbiased under both variants. The shift from oracle to M1 increased estimation variance modestly and introduced minor downward bias (mean absolute bias $0.010 \rightarrow 0.012$), reflecting noise propagated from the imprecise mass indicator into the size-factor estimate. The hierarchical SEM using three repeat measurements (M1–M3) recovered oracle performance ($0.011$): the first-order mass factor ($\text{Mass}_i =_\lambda \{\text{Mass}_{1i}, \text{Mass}_{2i}, \text{Mass}_{3i}\}$) averaged $\sigma_{me}$ out across repeats, and the second-order body size factor then cleanly separated the biological signal. Explicit latent modelling of repeat measurements can therefore compensate for mass measurement error and recover near-oracle performance even when individual weighings are imprecise.
+
+![Oracle versus M1 comparison of all four analytical approaches under mass measurement error ($\sigma_{me} = 0.10$ log scale, $\approx 10$% CV). 'True mass' variants use the noiseless latent mass from the simulation (oracle); 'M1' variants use a single noisy weighing. 'SEM (3x mass)' uses three repeat measurements modelled hierarchically. 'SLI' is the standardised length index with the SMA-estimated exponent, re-estimated against whichever mass column the index uses. Green dashed line = true direct effect (log mm °C$^{-1}$). Fill colour distinguishes the four method families; points are hypothetical species coloured by Bergmann's rule strength.](../../Figures/fig_covariate_comparison.png){#fig-covariate-comparison fig-pos="H" width="100%"}
+
+## Empirical application
+
+### Per-species estimates
+
+Across all 95 species, the per-species Bayesian SEM and the hierarchical SEM tracked one another closely, with the hierarchical estimates pulled toward their study means, and both carried substantially wider intervals than the ratio, SLI, and mass-as-covariate estimates (@fig-empirical-all). The SEM's position relative to the reference metrics is consistent with the simulation: for the majority of species it lands *between* the ratio (which the simulation shows is positively biased) and mass-as-covariate (negatively biased), rather than outside both. This holds for 63% (22/35) of species classified as Bergmann's and 71% (17/24) of those classified as Inverse Bergmann's — that is, under either direction of confounding, the SEM behaves as a moderated correction rather than an erratic one.
+
+![Estimated direct effect of the predictor on wing length for all 95 species, grouped by the direction of the confounding to be removed (Bergmann's, top; Inverse Bergmann's, bottom). Studies are pooled and species labels are coloured by study (Nightjar red, Weeks et al. 2020 blue, Atlantic birds green). Each method's estimate and 95% interval is shown: appendage/mass ratio, SLI with isometric and estimated exponents, mass as covariate, the per-species Bayesian SEM (blavaan, green), and the hierarchical SEM (purple). An asterisk marks species whose hierarchical SEM estimate falls between the ratio and mass-as-covariate estimates. Coefficients are standardised; note that the Weeks et al. predictor is year rather than temperature.](../../Figures/Empirical_all_estimates.png){#fig-empirical-all fig-pos="H" width="100%"}
+
+### Study-level effects and the cost of partial pooling
+
+The hierarchical model's study-level population mean direct wing effect was credibly positive in all three datasets (@fig-study-means): Nightjars $0.29$ (95% CI $0.10$–$0.49$), Weeks et al. $0.16$ ($0.13$–$0.20$) per year, and Atlantic Forest birds $0.06$ ($0.02$–$0.11$). The globally pooled standardised wing loading was $\mu_{a\text{w}} = 0.58$, well below the isometric value the per-species prior had assumed — evidence that the hierarchical model does learn the loading distribution rather than inheriting it from the prior.
+
+Partial pooling shrank per-species estimates toward these means and narrowed their intervals, but only modestly: the median 95% interval width fell from $0.274$ to $0.241$, about 12%. Pooling helps, but it cannot manufacture information that weak allometric coupling does not provide.
+
+![Study-level population mean direct wing effect $\mu_{d\text{w}}$ (posterior mean and 95% credible interval) from the **hierarchical** Stan model, credibly positive in all three systems. The Weeks et al. (2020) effect is per year; the other two are per °C, so magnitudes are not directly comparable across studies.](../../Figures/report_study_means.png){#fig-study-means fig-pos="H" width="70%"}
+
+### The SEM's imprecision is a sample-size problem
+
+The wide SEM intervals in @fig-empirical-all reflect imprecision rather than bias. Per-species interval width falls steeply with per-species sample size (@fig-ci-vs-n; pooled $r = -0.85$ with $\log N$), and this relationship holds *within* each dataset as well as across them (within-study $r = -0.94$, $-0.93$, and $-0.75$ for nightjars, Weeks et al., and Atlantic birds respectively), so it is not an artefact of studies differing in both typical sample size and typical precision. As the supporting simulation shows (@fig-si-two-factor), sampling error of this kind shrinks as $1/\sqrt{N}$ and is therefore fixable with more data.
+
+The one genuine bias risk — a second latent factor shared by the two appendages beyond body size — appears confined to the nightjars, whose wing–tail partial correlation given mass is $0.52$ compared with $0.15$–$0.19$ for the passerines. This is visible in @fig-ci-vs-n as the three nightjar species sitting above the pooled line: their intervals are wider than their sample sizes alone would predict. Adding a fourth indicator (tail) to the Atlantic Forest birds over-identifies the size factor and makes the single-factor assumption testable; it fits most species well (median CFI $0.97$, RMSEA $0.06$) and the wing estimate barely moves, indicating that for the passerines a single body-size factor is adequate and the three-indicator estimates were not biased.
+
+![Width of the per-species 95% interval for the direct wing effect against per-species sample size. **Estimates are the per-species Bayesian (blavaan) SEM posteriors, not the hierarchical model**, because the hierarchical model borrows strength across species and so partly decouples interval width from a species' own sample size. Coloured lines are within-study linear fits; the black line is the pooled fit across all 95 species. The three nightjar species (red) sit above the pooled line, consistent with the second appendage factor identified in that dataset.](../../Figures/report_ci_vs_n.png){#fig-ci-vs-n fig-pos="H" width="85%"}
+
+# Discussion
+
+My simulations demonstrate that statistical inference about Allen's rule depends not only on the analytical method employed but also on the assumed causal representation of body size. When morphological variation was generated from a latent body-size process in which mass and appendage dimensions jointly reflected an underlying structural trait, methods based on observed body mass produced systematically biased estimates of the direct temperature effect. In contrast, a latent structural equation model consistently recovered the simulated Allen's rule coefficient across a broad range of biologically realistic parameter combinations. These results suggest that the long-standing question of how to "control for body size" cannot be answered independently of the biological assumptions underlying the analysis.
+
+The distinction between body size and body mass is subtle but important. Body size is a latent biological property encompassing overall structural dimensions of an organism, whereas body mass is one observable manifestation of that property. Although strongly correlated, body mass also incorporates variation arising from fat reserves, gut contents, hydration state, reproductive condition, and measurement error. Consequently, body mass is an informative but imperfect indicator of structural size. When body mass is treated as though it were body size itself, statistical adjustment may not fully separate direct thermal effects on appendages from indirect effects mediated through variation in latent size. This issue becomes increasingly important when Bergmann's rule is strong because a larger fraction of morphological variation is channelled through latent body size.
+
+My results also provide an explanation for why empirical studies using different analytical approaches sometimes reach contrasting conclusions despite analysing similar datasets. Ratio methods consistently overestimated direct temperature effects because changes in body mass influenced the denominator more strongly than the numerator. Conversely, regression models conditioning on observed mass underestimated the direct effect under the simulated latent body-size process. The magnitude of this bias increased predictably with the strength of Bergmann's rule and with the extent to which appendage dimensions reflected overall body size. These findings imply that disagreement among published Allen's rule studies may reflect methodological differences as much as biological differences.
+
+An important advantage of the latent structural equation model is that it separates the concepts of measurement and process. Rather than assuming that observed mass perfectly represents body size, the model estimates body size from the covariance shared among multiple morphological traits while allowing each observed variable to contain independent residual variation. This framework also naturally accommodates repeated measurements. My measurement-error simulations illustrate this advantage: incorporating multiple body-mass measurements reduced the influence of measurement error and restored estimation accuracy to near-oracle performance. Because repeated measurements are routinely collected in many field and museum studies, this provides a practical means of improving inference without requiring additional morphological variables.
+
+These findings should not be interpreted as demonstrating that multiple regression is intrinsically biased or that latent structural equation models are universally superior. The performance of any statistical method depends on whether its assumptions correspond to the biological data-generating process. If observed body mass truly represented body size without appreciable independent variation, conventional regression would remain an appropriate analytical approach. Likewise, if appendage dimensions causally influenced body mass, an alternative statistical model would be required. My simulations instead evaluate one biologically motivated hypothesis in which structural body size is an unobserved trait reflected jointly by mass and multiple appendages. The principal contribution of this study is therefore conceptual rather than methodological: different assumptions about body size imply different estimands and different statistical procedures.
+
+Several limitations should also be acknowledged. My simulations assumed linear relationships on the log scale, independent residual errors, and identical direct thermal responses for both appendages. Real organisms may exhibit nonlinear allometry, phylogenetic covariance, developmental integration among appendages, and heterogeneous responses to climate. I also focused on two appendage traits, whereas empirical studies frequently measure a wider range of morphological characters. Extending the latent framework to include additional indicators, repeated measurements of multiple traits, or hierarchical population-level effects represents a promising direction for future work.
+
+More broadly, this study illustrates how causal thinking can clarify methodological debates in macroecology and evolutionary biology. Ecogeographical rules are often evaluated using statistical models that implicitly encode assumptions about biological processes. Making these assumptions explicit through causal diagrams encourages researchers to distinguish observed measurements from latent biological constructs and to consider whether common analytical practices estimate the quantities of genuine biological interest. Similar issues likely arise in many comparative and ecological applications in which latent traits are represented by noisy proxies.
+
+Allen's rule has traditionally been viewed as a question about appendage morphology. My results suggest that it is equally a question about how body size is conceptualised. Recognising body size as a latent biological attribute rather than a directly observed quantity shifts attention from choosing among statistical techniques to identifying models that faithfully represent the underlying biology. Latent variable models provide one principled framework for doing so, offering a coherent means of disentangling direct and indirect pathways linking climate to morphology.
+
+# Data Availability
+
+All analyses can be reproduced using the code available on Github. Nightjar morphological data are available from @skinnerEnvironmentalGeographicConditions2025; North American migrants data are available from @weeksSharedMorphologicalConsequences2020; Atlantic Forest bird data are available from [CITE: Hasui et al. 2018].
+
+{{< pagebreak >}}
+
+# Supporting Information
+
+## S1. Misspecification bias does not shrink with sample size
+
+The latent SEM assumes that a *single* body-size factor generates the covariance among mass and the appendages. If the appendages instead share variance for some additional reason — a limb or flight-apparatus factor on which mass does not load — the model is misspecified, and the wing coefficient absorbs part of that shared variance. This section shows that the resulting error is a **bias**, not imprecision, and therefore cannot be removed by collecting more individuals.
+
+I simulated data with an optional second latent factor. Latent Size is driven by temperature (Bergmann's rule, $\beta_S = -0.6$); mass loads on Size alone; both appendages load on Size, on a second latent factor "Limb" with loading $\gamma$, and directly on temperature ($B_T = 0.3$):
+
+$$\text{Size}_i \sim \mathcal{N}(\beta_S\, T_i,\, 1), \qquad \text{Limb}_i \sim \mathcal{N}(0,\, 1)$$
+
+$$\log(\text{Mass}_i) = \text{Size}_i + \varepsilon_{M,i}, \qquad \varepsilon_{M,i} \sim \mathcal{N}(0, \sigma_M^2)$$
+
+$$\log(\text{App}_{k,i}) = B_T\, T_i + \text{Size}_i + \gamma\, \text{Limb}_i + \varepsilon_{k,i}$$
+
+Three scenarios were crossed with sample sizes $N \in \{150,\, 300,\, 600,\, 1{,}200,\, 3{,}000,\, 10{,}000\}$, with 60 replicates each: **well-specified** ($\gamma = 0$, $\sigma_M = 0.5$; one factor, mass a good size proxy); **noisy mass** ($\gamma = 0$, $\sigma_M = 1.6$; still one factor, but mass is a labile proxy); and **second (limb) factor** ($\gamma = 1$, $\sigma_M = 0.5$). For each replicate I fitted the single-factor MIMIC SEM and, as the target, an oracle regression of wing on the *true* latent Size and temperature. Bias is the SEM estimate minus that oracle.
+
+The three scenarios separate cleanly (@fig-si-two-factor). Under both correctly specified scenarios the SEM is unbiased at every sample size (bias $\le |0.015|$, with no trend in $N$), and only its precision differs: noisy mass inflates $\text{SE}(\beta_T)$ roughly 2.5-fold at any given $N$, but that standard error still falls as $1/\sqrt{N}$, from $0.148$ at $N = 150$ to $0.017$ at $N = 10{,}000$. Imprecision from a labile mass proxy is thus a sample-size problem.
+
+Misspecification is not. With a second appendage factor, the SEM's bias is $+0.40$ at $N = 150$ and remains $+0.40$ at $N = 10{,}000$ — flat across a 67-fold increase in sample size — even while its standard error shrinks by a factor of eight. Collecting more individuals therefore makes a *wrong* estimate more precise, narrowing the interval around a value that is systematically displaced from the estimand. This is the failure mode that matters most in practice, because it is the one that looks best by conventional diagnostics.
+
+It is also, with three indicators, undetectable. The single-factor model with mass and two appendages is just-identified ($df = 0$), so it has no residual degrees of freedom with which to reject the single-factor assumption, and the two scenarios are close to observationally equivalent: noisy mass and a second factor both inflate the appendage loadings and both raise the wing–appendage partial correlation given mass (population values $0.75$ and $0.83$ respectively, versus $0.48$ when well specified). Distinguishing them requires a fourth morphological indicator, which over-identifies the factor and makes the assumption testable — as it did for the Atlantic Forest birds.
+
+![Misspecification bias is invariant to sample size. Each panel plots one quantity against per-species sample size (log scale) for three data-generating scenarios (60 replicates per point). **Bias** (left) is the single-factor SEM's wing coefficient minus an oracle regression on the true latent Size. Bias is zero at all $N$ when the model is correctly specified, whether or not mass is a noisy size proxy, but is pinned near $+0.40$ at every sample size when the appendages share a second latent factor. **SE(**$\beta_T$) (centre) and **SE(**$\lambda$) (right) shrink as $1/\sqrt{N}$ in all three scenarios: more data buys precision, never correctness.](../../Figures/SEM_bias_vs_variance.png){#fig-si-two-factor fig-pos="H" width="100%"}
+
+## S2. Mass as a collider
+
+![Relationship between temperature and log(appendage length) when log(mass) is stratified into quartiles within a single hypothetical species (i.e., each point is an individual of the hypothetical species). Conditioning on mass removes this indirect effect and induces a spurious negative association between temperature and appendage size. In causal modeling parlance, this is known as 'over-adjustment bias'.](../../Figures/Mass_as_collider.png){#fig-mass-collider}
+
+This hypothetical species was simulated such that temperature decreases mass (consistent with Bergmann's rule) but had no direct effect on appendage size (the correlation was 0). For illustrative purposes, the species exhibits inverse allometry, such that a temperature increase results in increased appendage length and decreased mass. These species are clearly longer relative to their body size, and the total effect of temperature on absolute (as well as relative) appendage length is positive, but this is entirely through the indirect path of $Temperature \rightarrow Mass \rightarrow Appendage$. The multivariate model attempts to estimate the effect of temperature while holding mass constant, removing the only pathway through which temperature influences appendage length. The model ends up assigning a spurious negative coefficient to temperature due to the combination of conditioning on a collider (i.e., mass) and the negative correlation between mass and temperature (@fig-mass-collider).
