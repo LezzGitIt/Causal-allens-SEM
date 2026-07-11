@@ -40,6 +40,7 @@
 # Setup ----
 library(tidyverse)
 library(lavaan)
+library(sliR)
 source("Scripts/Key_causal_fns.R")   # provides fit_lavaan_sem() and gen_causal_data()
 
 ## Data paths (absolute; these datasets live outside this repo)
@@ -120,19 +121,42 @@ lm_coef <- function(mod, term, species, appendage, approach) {
          lambda = NA_real_, se_lambda = NA_real_)
 }
 
-## Add the Standardized Length Index columns for each appendage, BEFORE z-scoring.
-## Log-scale SLI is a size adjustment with slope b: log(SLI) = log(App) - b*log(Mass)
-## (the same family as the ratio, which forces b = 1). sli_iso uses the isometric
-## b = 0.33; sli_est uses the per-species SMA slope sd(log App)/sd(log Mass). These
-## columns are z-scored downstream and regressed on the predictor like the ratio.
+## Add the Standardized Length Index columns for each appendage, BEFORE z-scoring, via
+## sliR::calc_sli(). calc_sli works on the raw scale (SLI = App*(M0/Mass)^b); log_cols
+## are already logged, so raw values are reconstructed with exp() rather than requiring
+## the original raw columns (some dataset pipelines above select() them away before this
+## is called). log(SLI) = log(App) - b*log(Mass) + b*log(M0): the additive b*log(M0) term
+## is constant within a group and drops out under the z-scoring/regression that follows,
+## so it does not change results. sli_iso uses the isometric b = 0.33; sli_est uses a
+## per-group SMA slope of log(Append) ~ log(Mass), fit manually with smatr (as
+## apply_methods()/sli_est_by_mass() in Key_causal_fns.R do) rather than calc_sli's
+## control= argument: control= fits ALL groups in one joint `mass * group` SMA, which
+## errors outright on a single-group df (the simulation sanity check has only one
+## "species") and on any group with < 3 observations (real singleton-species rows in
+## the empirical data, filtered out later by min_n_obs but still present here).
 add_sli_cols <- function(df, group_col, labels, log_cols, b_iso = 0.33) {
   for (i in seq_along(labels)) {
     a <- log_cols[i]; lab <- labels[i]
-    df <- df %>% group_by(.data[[group_col]]) %>%
-      mutate("sli_iso_{lab}" := .data[[a]] - b_iso * log_mass,
-             "sli_est_{lab}" := .data[[a]] - (sd(.data[[a]], na.rm = TRUE) /
-                                              sd(log_mass, na.rm = TRUE)) * log_mass) %>%
-      ungroup()
+    est_col <- paste0("sli_est_", lab)
+    df <- df %>%
+      mutate(.sli_app = exp(.data[[a]]), .sli_mass = exp(log_mass)) %>%
+      sliR::calc_sli(Append = .sli_app, Mass = .sli_mass, b_sli = b_iso,
+                     rename_col = paste0("sli_iso_", lab)) %>%
+      group_by(.data[[group_col]]) %>%
+      group_modify(\(d, ...) {
+        b_sma <- tryCatch(
+          coef(smatr::sma(log(.sli_app) ~ log(.sli_mass), data = d))["slope"],
+          error = function(e) NA_real_)
+        if (is.na(b_sma)) {
+          d[[est_col]] <- NA_real_
+          d
+        } else {
+          sliR::calc_sli(d, Append = .sli_app, Mass = .sli_mass, b_sli = b_sma, rename_col = est_col)
+        }
+      }) %>%
+      ungroup() %>%
+      mutate(across(all_of(c(paste0("sli_iso_", lab), est_col)), log)) %>%
+      dplyr::select(-.sli_app, -.sli_mass)
   }
   df
 }
