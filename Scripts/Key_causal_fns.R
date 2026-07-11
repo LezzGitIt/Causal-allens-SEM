@@ -2,7 +2,7 @@
 # Core functions for the causal Allen's rule simulation project.
 # Source this file from any script that needs these functions.
 #
-# Required packages: tidyverse, smatr, lavaan
+# Required packages: tidyverse, smatr, lavaan, sliR
 
 # ── Algebraic solvers for simulation parameter grid ──────────────────────────
 #
@@ -159,21 +159,24 @@ simulate_data <- function(..., N = 1500) {
 # Ratio, Ryding (mass-as-covariate), and two SLI variants applied to one appendage.
 # Coefficients are on the z-scored scale; backtransform with sd_append / sigma_temp.
 #
-# SLI (Standardized Length Index; Peig & Green 2009) is built on the log scale to
-# stay comparable to the other logged metrics: log(SLI) = App_log - b * Mass_log,
-# a size-corrected log length. The Peig-Green L0 (geometric mean mass) enters only
-# as an additive constant, which drops out under z-scoring, so it is omitted here.
+# SLI (Standardized Length Index; Peig & Green 2009), via sliR::calc_sli() on the raw
+# scale: SLI_i = App_i * (M0/Mass_i)^b. We log it to stay comparable to the other
+# logged metrics: log(SLI) = App_log - b*Mass_log + b*log(M0), a size-corrected log
+# length. The b*log(M0) term is an additive constant (M0 = mean(Mass) by default), which
+# drops out under z-scoring, so it does not affect the fitted Temp_inc slope below.
 #   - SLI (isometry): b = 0.33 (geometric similarity, length ∝ mass^(1/3))
 #   - SLI (estimated): b = SMA slope of log(appendage) ~ log(mass)
 apply_methods <- function(sim_df, append_log = "Append_log", append_raw = "Append") {
   sim_df2 <- sim_df %>%
-    rename(App_log = all_of(append_log)) %>%
+    rename(App_log = all_of(append_log), App = all_of(append_raw)) %>%
     mutate(app_mass = App_log / Mass_log)
 
   b_sma <- coef(smatr::sma(App_log ~ Mass_log, data = sim_df2))["slope"]
   sim_df2 <- sim_df2 %>%
-    mutate(sli_iso = App_log - 0.33  * Mass_log,
-           sli_est = App_log - b_sma * Mass_log)
+    sliR::calc_sli(Append = App, Mass = Mass, b_sli = 0.33,  rename_col = "sli_iso") %>%
+    sliR::calc_sli(Append = App, Mass = Mass, b_sli = b_sma, rename_col = "sli_est") %>%
+    mutate(sli_iso = log(sli_iso),
+           sli_est = log(sli_est))
 
   sim_df_s <- sim_df2 %>% mutate(across(where(is.numeric), \(x) as.numeric(scale(x))))
 
@@ -322,16 +325,21 @@ ratio_by_mass <- function(df, mass_col, suffix) {
 ratio_oracle <- function(df) ratio_by_mass(df, "Mass_log", "oracle")
 ratio_m1     <- function(df) ratio_by_mass(df, "M1_log",   "m1")
 
-# SLI (estimated slope): log(SLI) = App_log - b_sma * mass, with b_sma the SMA slope of
-# the appendage on that same mass column. Fitting the SMA to the noisy mass (M1) is what
-# a field study would actually do, so the attenuated slope is part of the M1 variant.
+# SLI (estimated slope), via sliR::calc_sli() on the raw scale (see apply_methods() above
+# for why logging it afterwards leaves the Temp_inc slope unchanged). `mass_col` selects
+# the log mass column (Mass_log/M1_log); its raw-scale counterpart (Mass/M1) already
+# exists in df. Fitting the SMA to the noisy mass (M1) is what a field study would
+# actually do, so the attenuated slope is part of the M1 variant.
 sli_est_by_mass <- function(df, mass_col, suffix) {
-  mass <- df[[mass_col]]
+  mass_raw <- sub("_log$", "", mass_col)
+  mass     <- df[[mass_col]]
   b_w  <- coef(smatr::sma(df$Append_log ~ mass))["slope"]
   b_t  <- coef(smatr::sma(df$Tarsus_log ~ mass))["slope"]
   df_s <- df %>%
-    mutate(sli_w = Append_log - b_w * mass,
-           sli_t = Tarsus_log - b_t * mass) %>%
+    sliR::calc_sli(Append = Append, Mass = .data[[mass_raw]], b_sli = b_w, rename_col = "sli_w") %>%
+    sliR::calc_sli(Append = Tarsus, Mass = .data[[mass_raw]], b_sli = b_t, rename_col = "sli_t") %>%
+    mutate(sli_w = log(sli_w),
+           sli_t = log(sli_t)) %>%
     mutate(across(where(is.numeric), \(x) as.numeric(scale(x))))
   w <- lm(sli_w ~ Temp_inc, data = df_s)
   t <- lm(sli_t ~ Temp_inc, data = df_s)
